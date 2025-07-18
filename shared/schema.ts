@@ -168,7 +168,69 @@ export const aiToolsRelations = relations(aiTools, ({ one, many }) => ({
   user: one(users, { fields: [aiTools.userId], references: [users.id] }),
   prompts: many(prompts),
   aiUsageLogs: many(aiUsageLogs),
+  experiments: many(experiments),
+  insights: many(insights),
+  collaborations: many(collaborations),
 }));
+
+// Experiments table for AI Experimentation Lab
+export const experiments = pgTable("experiments", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  name: text("name").notNull(),
+  description: text("description"),
+  basePrompt: text("base_prompt").notNull(),
+  variations: text("variations").array().notNull(),
+  models: text("models").array().notNull(),
+  results: jsonb("results").default([]),
+  status: text("status").notNull().default("draft"), // draft, running, completed
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Growth Insights table for Strategic Growth Advisor
+export const insights = pgTable("insights", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  type: text("type").notNull(), // opportunity, risk, optimization, trend
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  impact: text("impact").notNull(), // high, medium, low
+  priority: integer("priority").notNull(),
+  actionItems: text("action_items").array().notNull(),
+  timeframe: text("timeframe").notNull(),
+  potentialValue: decimal("potential_value", { precision: 10, scale: 2 }).default("0"),
+  confidence: integer("confidence").notNull(), // 0-100
+  status: text("status").notNull().default("pending"), // pending, in_progress, completed
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Collaborations table for Real-time Collaboration
+export const collaborations = pgTable("collaborations", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  projectId: integer("project_id").references(() => projects.id),
+  type: text("type").notNull(), // document, project, workflow
+  permissions: text("permissions").notNull(), // read, write, admin
+  invitedEmail: text("invited_email"),
+  status: text("status").notNull().default("pending"), // pending, active, revoked
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Business Intelligence Metrics table
+export const businessMetrics = pgTable("business_metrics", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  metricType: text("metric_type").notNull(), // revenue, clients, projects, ai_usage, productivity
+  metricName: text("metric_name").notNull(),
+  value: decimal("value", { precision: 15, scale: 4 }).notNull(),
+  period: text("period").notNull(), // daily, weekly, monthly, yearly
+  date: timestamp("date").notNull(),
+  metadata: jsonb("metadata").default({}),
+  createdAt: timestamp("created_at").defaultNow(),
+});
 
 export const promptsRelations = relations(prompts, ({ one, many }) => ({
   user: one(users, { fields: [prompts.userId], references: [users.id] }),
@@ -196,6 +258,23 @@ export const aiUsageLogsRelations = relations(aiUsageLogs, ({ one }) => ({
   aiTool: one(aiTools, { fields: [aiUsageLogs.aiToolId], references: [aiTools.id] }),
   project: one(projects, { fields: [aiUsageLogs.projectId], references: [projects.id] }),
   prompt: one(prompts, { fields: [aiUsageLogs.promptId], references: [prompts.id] }),
+}));
+
+export const experimentsRelations = relations(experiments, ({ one }) => ({
+  user: one(users, { fields: [experiments.userId], references: [users.id] }),
+}));
+
+export const insightsRelations = relations(insights, ({ one }) => ({
+  user: one(users, { fields: [insights.userId], references: [users.id] }),
+}));
+
+export const collaborationsRelations = relations(collaborations, ({ one }) => ({
+  user: one(users, { fields: [collaborations.userId], references: [users.id] }),
+  project: one(projects, { fields: [collaborations.projectId], references: [projects.id] }),
+}));
+
+export const businessMetricsRelations = relations(businessMetrics, ({ one }) => ({
+  user: one(users, { fields: [businessMetrics.userId], references: [users.id] }),
 }));
 
 // Schema types
@@ -273,3 +352,36 @@ export type RevenueTracking = typeof revenueTracking.$inferSelect;
 export type InsertRevenueTracking = z.infer<typeof insertRevenueTrackingSchema>;
 export type AiUsageLog = typeof aiUsageLogs.$inferSelect;
 export type InsertAiUsageLog = z.infer<typeof insertAiUsageLogSchema>;
+
+// New advanced feature schema exports
+export const insertExperimentSchema = createInsertSchema(experiments).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertInsightSchema = createInsertSchema(insights).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertCollaborationSchema = createInsertSchema(collaborations).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertBusinessMetricSchema = createInsertSchema(businessMetrics).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type Experiment = typeof experiments.$inferSelect;
+export type InsertExperiment = z.infer<typeof insertExperimentSchema>;
+export type Insight = typeof insights.$inferSelect;
+export type InsertInsight = z.infer<typeof insertInsightSchema>;
+export type Collaboration = typeof collaborations.$inferSelect;
+export type InsertCollaboration = z.infer<typeof insertCollaborationSchema>;
+export type BusinessMetric = typeof businessMetrics.$inferSelect;
+export type InsertBusinessMetric = z.infer<typeof insertBusinessMetricSchema>;

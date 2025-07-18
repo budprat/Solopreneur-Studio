@@ -12,6 +12,9 @@ import Prompts from "@/pages/prompts";
 import Knowledge from "@/pages/knowledge";
 import Automation from "@/pages/automation";
 import Revenue from "@/pages/revenue";
+import ExperimentLab from "@/pages/experiment-lab";
+import GrowthAdvisor from "@/pages/growth-advisor";
+import BusinessIntelligence from "@/pages/business-intelligence";
 import ClientWorkspace from "@/pages/client-workspace";
 import NotFound from "@/pages/not-found";
 
@@ -26,6 +29,9 @@ function Router() {
         <Route path="/knowledge" component={Knowledge} />
         <Route path="/automation" component={Automation} />
         <Route path="/revenue" component={Revenue} />
+        <Route path="/experiment-lab" component={ExperimentLab} />
+        <Route path="/growth-advisor" component={GrowthAdvisor} />
+        <Route path="/business-intelligence" component={BusinessIntelligence} />
         <Route path="/client/:id" component={ClientWorkspace} />
         <Route component={NotFound} />
       </Switch>

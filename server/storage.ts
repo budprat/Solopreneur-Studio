@@ -1,9 +1,12 @@
 import {
   users, clients, projects, aiTools, prompts, knowledgeBase, automationWorkflows, revenueTracking, aiUsageLogs,
+  experiments, insights, collaborations, businessMetrics,
   type User, type InsertUser, type Client, type InsertClient, type Project, type InsertProject,
   type AiTool, type InsertAiTool, type Prompt, type InsertPrompt, type KnowledgeBase, type InsertKnowledgeBase,
   type AutomationWorkflow, type InsertAutomationWorkflow, type RevenueTracking, type InsertRevenueTracking,
-  type AiUsageLog, type InsertAiUsageLog
+  type AiUsageLog, type InsertAiUsageLog, type Experiment, type InsertExperiment,
+  type Insight, type InsertInsight, type Collaboration, type InsertCollaboration,
+  type BusinessMetric, type InsertBusinessMetric
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, sql, and, gte, lte } from "drizzle-orm";
@@ -77,6 +80,34 @@ export interface IStorage {
     aiToolsCost: number;
     hoursSaved: number;
   }>;
+
+  // Experiments (AI Experimentation Lab)
+  getExperiments(userId: number): Promise<Experiment[]>;
+  getExperiment(id: number): Promise<Experiment | undefined>;
+  createExperiment(experiment: InsertExperiment): Promise<Experiment>;
+  updateExperiment(id: number, experiment: Partial<InsertExperiment>): Promise<Experiment>;
+  runExperiment(id: number): Promise<Experiment>;
+  deleteExperiment(id: number): Promise<void>;
+
+  // Insights (Strategic Growth Advisor)
+  getInsights(userId: number): Promise<Insight[]>;
+  getInsight(id: number): Promise<Insight | undefined>;
+  createInsight(insight: InsertInsight): Promise<Insight>;
+  updateInsight(id: number, insight: Partial<InsertInsight>): Promise<Insight>;
+  deleteInsight(id: number): Promise<void>;
+  getGrowthMetrics(userId: number): Promise<any>;
+
+  // Collaborations (Real-time Collaboration)
+  getCollaborations(userId: number): Promise<Collaboration[]>;
+  getCollaboration(id: number): Promise<Collaboration | undefined>;
+  createCollaboration(collaboration: InsertCollaboration): Promise<Collaboration>;
+  updateCollaboration(id: number, collaboration: Partial<InsertCollaboration>): Promise<Collaboration>;
+  deleteCollaboration(id: number): Promise<void>;
+
+  // Business Intelligence
+  getBusinessMetrics(userId: number): Promise<BusinessMetric[]>;
+  createBusinessMetric(metric: InsertBusinessMetric): Promise<BusinessMetric>;
+  getBusinessAnalytics(userId: number, period: string): Promise<any>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -347,6 +378,160 @@ export class DatabaseStorage implements IStorage {
       activeProjects: activeProjectsResult[0]?.count || 0,
       aiToolsCost: aiToolsCostResult[0]?.total || 0,
       hoursSaved: 47 // This would be calculated based on automation metrics
+    };
+  }
+
+  // Experiments (AI Experimentation Lab)
+  async getExperiments(userId: number): Promise<Experiment[]> {
+    return await db.select().from(experiments).where(eq(experiments.userId, userId)).orderBy(desc(experiments.createdAt));
+  }
+
+  async getExperiment(id: number): Promise<Experiment | undefined> {
+    const [experiment] = await db.select().from(experiments).where(eq(experiments.id, id));
+    return experiment || undefined;
+  }
+
+  async createExperiment(experiment: InsertExperiment): Promise<Experiment> {
+    const [newExperiment] = await db.insert(experiments).values(experiment).returning();
+    return newExperiment;
+  }
+
+  async updateExperiment(id: number, experiment: Partial<InsertExperiment>): Promise<Experiment> {
+    const [updatedExperiment] = await db.update(experiments).set(experiment).where(eq(experiments.id, id)).returning();
+    return updatedExperiment;
+  }
+
+  async runExperiment(id: number): Promise<Experiment> {
+    // Mock implementation - in production this would integrate with AI APIs
+    const mockResults = [
+      {
+        id: Date.now().toString(),
+        model: 'gpt-4',
+        prompt: 'Test prompt',
+        response: 'Mock response from GPT-4',
+        tokens: 150,
+        cost: 0.0045,
+        latency: 1200,
+        qualityScore: 8.5,
+        timestamp: new Date().toISOString()
+      }
+    ];
+    
+    const [updatedExperiment] = await db.update(experiments)
+      .set({ status: 'completed', results: mockResults })
+      .where(eq(experiments.id, id))
+      .returning();
+    return updatedExperiment;
+  }
+
+  async deleteExperiment(id: number): Promise<void> {
+    await db.delete(experiments).where(eq(experiments.id, id));
+  }
+
+  // Insights (Strategic Growth Advisor)
+  async getInsights(userId: number): Promise<Insight[]> {
+    return await db.select().from(insights).where(eq(insights.userId, userId)).orderBy(desc(insights.createdAt));
+  }
+
+  async getInsight(id: number): Promise<Insight | undefined> {
+    const [insight] = await db.select().from(insights).where(eq(insights.id, id));
+    return insight || undefined;
+  }
+
+  async createInsight(insight: InsertInsight): Promise<Insight> {
+    const [newInsight] = await db.insert(insights).values(insight).returning();
+    return newInsight;
+  }
+
+  async updateInsight(id: number, insight: Partial<InsertInsight>): Promise<Insight> {
+    const [updatedInsight] = await db.update(insights).set(insight).where(eq(insights.id, id)).returning();
+    return updatedInsight;
+  }
+
+  async deleteInsight(id: number): Promise<void> {
+    await db.delete(insights).where(eq(insights.id, id));
+  }
+
+  async getGrowthMetrics(userId: number): Promise<any> {
+    // Mock implementation - in production this would calculate real metrics
+    return {
+      currentRevenue: 127500,
+      growthRate: 23,
+      clientCount: 8,
+      avgProjectValue: 15938,
+      profitMargin: 68,
+      marketPosition: 'Growing',
+      riskLevel: 'Medium'
+    };
+  }
+
+  // Collaborations (Real-time Collaboration)
+  async getCollaborations(userId: number): Promise<Collaboration[]> {
+    return await db.select().from(collaborations).where(eq(collaborations.userId, userId)).orderBy(desc(collaborations.createdAt));
+  }
+
+  async getCollaboration(id: number): Promise<Collaboration | undefined> {
+    const [collaboration] = await db.select().from(collaborations).where(eq(collaborations.id, id));
+    return collaboration || undefined;
+  }
+
+  async createCollaboration(collaboration: InsertCollaboration): Promise<Collaboration> {
+    const [newCollaboration] = await db.insert(collaborations).values(collaboration).returning();
+    return newCollaboration;
+  }
+
+  async updateCollaboration(id: number, collaboration: Partial<InsertCollaboration>): Promise<Collaboration> {
+    const [updatedCollaboration] = await db.update(collaborations).set(collaboration).where(eq(collaborations.id, id)).returning();
+    return updatedCollaboration;
+  }
+
+  async deleteCollaboration(id: number): Promise<void> {
+    await db.delete(collaborations).where(eq(collaborations.id, id));
+  }
+
+  // Business Intelligence
+  async getBusinessMetrics(userId: number): Promise<BusinessMetric[]> {
+    return await db.select().from(businessMetrics).where(eq(businessMetrics.userId, userId)).orderBy(desc(businessMetrics.createdAt));
+  }
+
+  async createBusinessMetric(metric: InsertBusinessMetric): Promise<BusinessMetric> {
+    const [newMetric] = await db.insert(businessMetrics).values(metric).returning();
+    return newMetric;
+  }
+
+  async getBusinessAnalytics(userId: number, period: string): Promise<any> {
+    // Mock implementation - in production this would calculate real analytics
+    return {
+      revenue: {
+        current: 127500,
+        previous: 98200,
+        growth: 29.8,
+        forecast: 156000
+      },
+      clients: {
+        active: 8,
+        churn: 12.5,
+        lifetime_value: 45600,
+        satisfaction: 4.7
+      },
+      projects: {
+        active: 14,
+        completed: 47,
+        avg_duration: 28,
+        success_rate: 94.2
+      },
+      ai_usage: {
+        total_requests: 15420,
+        total_cost: 847.30,
+        avg_response_time: 1850,
+        cost_per_request: 0.055
+      },
+      productivity: {
+        billable_hours: 124,
+        utilization_rate: 82.5,
+        profit_margin: 68.3,
+        efficiency_score: 91
+      }
     };
   }
 }

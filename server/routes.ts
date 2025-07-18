@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertClientSchema, insertProjectSchema, insertAiToolSchema, insertPromptSchema, insertKnowledgeBaseSchema, insertAutomationWorkflowSchema, insertRevenueTrackingSchema } from "@shared/schema";
+import { insertClientSchema, insertProjectSchema, insertAiToolSchema, insertPromptSchema, insertKnowledgeBaseSchema, insertAutomationWorkflowSchema, insertRevenueTrackingSchema, insertExperimentSchema, insertInsightSchema, insertCollaborationSchema, insertBusinessMetricSchema } from "@shared/schema";
 import { z } from "zod";
 import { fromZodError } from "zod-validation-error";
 
@@ -274,6 +274,133 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.status(400).json({ error: fromZodError(error).toString() });
       } else {
         res.status(500).json({ error: "Failed to create revenue tracking" });
+      }
+    }
+  });
+
+  // Experiments routes for AI Experimentation Lab
+  app.get("/api/experiments", async (req, res) => {
+    try {
+      const experiments = await storage.getExperiments(MOCK_USER_ID);
+      res.json(experiments);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch experiments" });
+    }
+  });
+
+  app.post("/api/experiments", async (req, res) => {
+    try {
+      const validatedData = insertExperimentSchema.parse({
+        ...req.body,
+        userId: MOCK_USER_ID
+      });
+      const experiment = await storage.createExperiment(validatedData);
+      res.status(201).json(experiment);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: fromZodError(error).toString() });
+      } else {
+        res.status(500).json({ error: "Failed to create experiment" });
+      }
+    }
+  });
+
+  app.post("/api/experiments/:id/run", async (req, res) => {
+    try {
+      const experiment = await storage.runExperiment(parseInt(req.params.id));
+      res.json(experiment);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to run experiment" });
+    }
+  });
+
+  // Growth Insights routes for Strategic Growth Advisor
+  app.get("/api/insights", async (req, res) => {
+    try {
+      const insights = await storage.getInsights(MOCK_USER_ID);
+      res.json(insights);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch insights" });
+    }
+  });
+
+  app.post("/api/insights", async (req, res) => {
+    try {
+      const validatedData = insertInsightSchema.parse({
+        ...req.body,
+        userId: MOCK_USER_ID
+      });
+      const insight = await storage.createInsight(validatedData);
+      res.status(201).json(insight);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: fromZodError(error).toString() });
+      } else {
+        res.status(500).json({ error: "Failed to create insight" });
+      }
+    }
+  });
+
+  app.get("/api/growth/metrics", async (req, res) => {
+    try {
+      const metrics = await storage.getGrowthMetrics(MOCK_USER_ID);
+      res.json(metrics);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch growth metrics" });
+    }
+  });
+
+  // Business Intelligence routes
+  app.get("/api/analytics", async (req, res) => {
+    try {
+      const period = req.query.period as string || '30d';
+      const analytics = await storage.getBusinessAnalytics(MOCK_USER_ID, period);
+      res.json(analytics);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch analytics" });
+    }
+  });
+
+  app.post("/api/analytics/metrics", async (req, res) => {
+    try {
+      const validatedData = insertBusinessMetricSchema.parse({
+        ...req.body,
+        userId: MOCK_USER_ID
+      });
+      const metric = await storage.createBusinessMetric(validatedData);
+      res.status(201).json(metric);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: fromZodError(error).toString() });
+      } else {
+        res.status(500).json({ error: "Failed to create metric" });
+      }
+    }
+  });
+
+  // Collaboration routes
+  app.get("/api/collaborations", async (req, res) => {
+    try {
+      const collaborations = await storage.getCollaborations(MOCK_USER_ID);
+      res.json(collaborations);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch collaborations" });
+    }
+  });
+
+  app.post("/api/collaborations", async (req, res) => {
+    try {
+      const validatedData = insertCollaborationSchema.parse({
+        ...req.body,
+        userId: MOCK_USER_ID
+      });
+      const collaboration = await storage.createCollaboration(validatedData);
+      res.status(201).json(collaboration);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: fromZodError(error).toString() });
+      } else {
+        res.status(500).json({ error: "Failed to create collaboration" });
       }
     }
   });
