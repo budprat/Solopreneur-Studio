@@ -145,23 +145,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
         </div>
       </nav>
 
-      {/* User Profile */}
-      <div className="absolute bottom-0 w-full p-4 border-t border-slate-200 dark:border-slate-700">
-        <div className="flex items-center space-x-3">
-          <img
-            src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=120&h=120"
-            alt="Alex Chen"
-            className="w-10 h-10 rounded-full object-cover"
-          />
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-slate-900 dark:text-white truncate">Alex Chen</p>
-            <p className="text-xs text-slate-500 dark:text-slate-400 truncate">AI Consultant</p>
-          </div>
-          <button className="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200">
-            <ServerCog className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
+
     </div>
   );
 }
