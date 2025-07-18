@@ -6,27 +6,27 @@ import {
   type AutomationWorkflow, type InsertAutomationWorkflow, type RevenueTracking, type InsertRevenueTracking,
   type AiUsageLog, type InsertAiUsageLog, type Experiment, type InsertExperiment,
   type Insight, type InsertInsight, type Collaboration, type InsertCollaboration,
-  type BusinessMetric, type InsertBusinessMetric
+  type BusinessMetric, type InsertBusinessMetric,
+  type UpsertUser
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, sql, and, gte, lte } from "drizzle-orm";
 
 export interface IStorage {
-  // Users
-  getUser(id: number): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
+  // Users (for Replit Auth)
+  getUser(id: string): Promise<User | undefined>;
+  upsertUser(user: UpsertUser): Promise<User>;
   getUserByEmail(email: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
   
   // Clients
-  getClients(userId: number): Promise<Client[]>;
+  getClients(userId: string): Promise<Client[]>;
   getClient(id: number): Promise<Client | undefined>;
   createClient(client: InsertClient): Promise<Client>;
   updateClient(id: number, client: Partial<InsertClient>): Promise<Client>;
   deleteClient(id: number): Promise<void>;
   
   // Projects
-  getProjects(userId: number): Promise<Project[]>;
+  getProjects(userId: string): Promise<Project[]>;
   getProject(id: number): Promise<Project | undefined>;
   getProjectsByClient(clientId: number): Promise<Project[]>;
   createProject(project: InsertProject): Promise<Project>;
@@ -34,47 +34,47 @@ export interface IStorage {
   deleteProject(id: number): Promise<void>;
   
   // AI Tools
-  getAiTools(userId: number): Promise<AiTool[]>;
+  getAiTools(userId: string): Promise<AiTool[]>;
   getAiTool(id: number): Promise<AiTool | undefined>;
   createAiTool(aiTool: InsertAiTool): Promise<AiTool>;
   updateAiTool(id: number, aiTool: Partial<InsertAiTool>): Promise<AiTool>;
   deleteAiTool(id: number): Promise<void>;
   
   // Prompts
-  getPrompts(userId: number): Promise<Prompt[]>;
+  getPrompts(userId: string): Promise<Prompt[]>;
   getPrompt(id: number): Promise<Prompt | undefined>;
   createPrompt(prompt: InsertPrompt): Promise<Prompt>;
   updatePrompt(id: number, prompt: Partial<InsertPrompt>): Promise<Prompt>;
   deletePrompt(id: number): Promise<void>;
   
   // Knowledge Base
-  getKnowledgeBase(userId: number): Promise<KnowledgeBase[]>;
+  getKnowledgeBase(userId: string): Promise<KnowledgeBase[]>;
   getKnowledgeBaseItem(id: number): Promise<KnowledgeBase | undefined>;
   createKnowledgeBase(item: InsertKnowledgeBase): Promise<KnowledgeBase>;
   updateKnowledgeBase(id: number, item: Partial<InsertKnowledgeBase>): Promise<KnowledgeBase>;
   deleteKnowledgeBase(id: number): Promise<void>;
   
   // Automation Workflows
-  getAutomationWorkflows(userId: number): Promise<AutomationWorkflow[]>;
+  getAutomationWorkflows(userId: string): Promise<AutomationWorkflow[]>;
   getAutomationWorkflow(id: number): Promise<AutomationWorkflow | undefined>;
   createAutomationWorkflow(workflow: InsertAutomationWorkflow): Promise<AutomationWorkflow>;
   updateAutomationWorkflow(id: number, workflow: Partial<InsertAutomationWorkflow>): Promise<AutomationWorkflow>;
   deleteAutomationWorkflow(id: number): Promise<void>;
   
   // Revenue Tracking
-  getRevenueTracking(userId: number): Promise<RevenueTracking[]>;
-  getRevenueByDateRange(userId: number, startDate: Date, endDate: Date): Promise<RevenueTracking[]>;
+  getRevenueTracking(userId: string): Promise<RevenueTracking[]>;
+  getRevenueByDateRange(userId: string, startDate: Date, endDate: Date): Promise<RevenueTracking[]>;
   createRevenueTracking(revenue: InsertRevenueTracking): Promise<RevenueTracking>;
   updateRevenueTracking(id: number, revenue: Partial<InsertRevenueTracking>): Promise<RevenueTracking>;
   deleteRevenueTracking(id: number): Promise<void>;
   
   // AI Usage Logs
-  getAiUsageLogs(userId: number): Promise<AiUsageLog[]>;
+  getAiUsageLogs(userId: string): Promise<AiUsageLog[]>;
   createAiUsageLog(log: InsertAiUsageLog): Promise<AiUsageLog>;
-  getAiUsageByDateRange(userId: number, startDate: Date, endDate: Date): Promise<AiUsageLog[]>;
+  getAiUsageByDateRange(userId: string, startDate: Date, endDate: Date): Promise<AiUsageLog[]>;
   
   // Dashboard Analytics
-  getDashboardStats(userId: number): Promise<{
+  getDashboardStats(userId: string): Promise<{
     monthlyRevenue: number;
     activeProjects: number;
     aiToolsCost: number;
@@ -82,7 +82,7 @@ export interface IStorage {
   }>;
 
   // Experiments (AI Experimentation Lab)
-  getExperiments(userId: number): Promise<Experiment[]>;
+  getExperiments(userId: string): Promise<Experiment[]>;
   getExperiment(id: number): Promise<Experiment | undefined>;
   createExperiment(experiment: InsertExperiment): Promise<Experiment>;
   updateExperiment(id: number, experiment: Partial<InsertExperiment>): Promise<Experiment>;
@@ -90,36 +90,46 @@ export interface IStorage {
   deleteExperiment(id: number): Promise<void>;
 
   // Insights (Strategic Growth Advisor)
-  getInsights(userId: number): Promise<Insight[]>;
+  getInsights(userId: string): Promise<Insight[]>;
   getInsight(id: number): Promise<Insight | undefined>;
   createInsight(insight: InsertInsight): Promise<Insight>;
   updateInsight(id: number, insight: Partial<InsertInsight>): Promise<Insight>;
   deleteInsight(id: number): Promise<void>;
-  getGrowthMetrics(userId: number): Promise<any>;
+  getGrowthMetrics(userId: string): Promise<any>;
 
   // Collaborations (Real-time Collaboration)
-  getCollaborations(userId: number): Promise<Collaboration[]>;
+  getCollaborations(userId: string): Promise<Collaboration[]>;
   getCollaboration(id: number): Promise<Collaboration | undefined>;
   createCollaboration(collaboration: InsertCollaboration): Promise<Collaboration>;
   updateCollaboration(id: number, collaboration: Partial<InsertCollaboration>): Promise<Collaboration>;
   deleteCollaboration(id: number): Promise<void>;
 
   // Business Intelligence
-  getBusinessMetrics(userId: number): Promise<BusinessMetric[]>;
+  getBusinessMetrics(userId: string): Promise<BusinessMetric[]>;
   createBusinessMetric(metric: InsertBusinessMetric): Promise<BusinessMetric>;
-  getBusinessAnalytics(userId: number, period: string): Promise<any>;
+  getBusinessAnalytics(userId: string, period: string): Promise<any>;
 }
 
 export class DatabaseStorage implements IStorage {
-  // Users
-  async getUser(id: number): Promise<User | undefined> {
+  // Users (for Replit Auth)
+  async getUser(id: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
     return user || undefined;
   }
 
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.username, username));
-    return user || undefined;
+  async upsertUser(userData: UpsertUser): Promise<User> {
+    const [user] = await db
+      .insert(users)
+      .values(userData)
+      .onConflictDoUpdate({
+        target: users.id,
+        set: {
+          ...userData,
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
+    return user;
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
@@ -127,13 +137,8 @@ export class DatabaseStorage implements IStorage {
     return user || undefined;
   }
 
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const [user] = await db.insert(users).values(insertUser).returning();
-    return user;
-  }
-
   // Clients
-  async getClients(userId: number): Promise<Client[]> {
+  async getClients(userId: string): Promise<Client[]> {
     return await db.select().from(clients).where(eq(clients.userId, userId)).orderBy(desc(clients.createdAt));
   }
 
@@ -157,7 +162,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Projects
-  async getProjects(userId: number): Promise<Project[]> {
+  async getProjects(userId: string): Promise<Project[]> {
     return await db.select().from(projects).where(eq(projects.userId, userId)).orderBy(desc(projects.createdAt));
   }
 
@@ -185,7 +190,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // AI Tools
-  async getAiTools(userId: number): Promise<AiTool[]> {
+  async getAiTools(userId: string): Promise<AiTool[]> {
     return await db.select().from(aiTools).where(eq(aiTools.userId, userId)).orderBy(desc(aiTools.createdAt));
   }
 
@@ -209,7 +214,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Prompts
-  async getPrompts(userId: number): Promise<Prompt[]> {
+  async getPrompts(userId: string): Promise<Prompt[]> {
     return await db.select().from(prompts).where(eq(prompts.userId, userId)).orderBy(desc(prompts.createdAt));
   }
 
@@ -233,7 +238,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Knowledge Base
-  async getKnowledgeBase(userId: number): Promise<KnowledgeBase[]> {
+  async getKnowledgeBase(userId: string): Promise<KnowledgeBase[]> {
     return await db.select().from(knowledgeBase).where(eq(knowledgeBase.userId, userId)).orderBy(desc(knowledgeBase.createdAt));
   }
 
@@ -257,7 +262,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Automation Workflows
-  async getAutomationWorkflows(userId: number): Promise<AutomationWorkflow[]> {
+  async getAutomationWorkflows(userId: string): Promise<AutomationWorkflow[]> {
     return await db.select().from(automationWorkflows).where(eq(automationWorkflows.userId, userId)).orderBy(desc(automationWorkflows.createdAt));
   }
 
@@ -281,11 +286,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Revenue Tracking
-  async getRevenueTracking(userId: number): Promise<RevenueTracking[]> {
+  async getRevenueTracking(userId: string): Promise<RevenueTracking[]> {
     return await db.select().from(revenueTracking).where(eq(revenueTracking.userId, userId)).orderBy(desc(revenueTracking.date));
   }
 
-  async getRevenueByDateRange(userId: number, startDate: Date, endDate: Date): Promise<RevenueTracking[]> {
+  async getRevenueByDateRange(userId: string, startDate: Date, endDate: Date): Promise<RevenueTracking[]> {
     return await db.select().from(revenueTracking).where(
       and(
         eq(revenueTracking.userId, userId),
@@ -310,7 +315,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // AI Usage Logs
-  async getAiUsageLogs(userId: number): Promise<AiUsageLog[]> {
+  async getAiUsageLogs(userId: string): Promise<AiUsageLog[]> {
     return await db.select().from(aiUsageLogs).where(eq(aiUsageLogs.userId, userId)).orderBy(desc(aiUsageLogs.createdAt));
   }
 
@@ -319,7 +324,7 @@ export class DatabaseStorage implements IStorage {
     return newLog;
   }
 
-  async getAiUsageByDateRange(userId: number, startDate: Date, endDate: Date): Promise<AiUsageLog[]> {
+  async getAiUsageByDateRange(userId: string, startDate: Date, endDate: Date): Promise<AiUsageLog[]> {
     return await db.select().from(aiUsageLogs).where(
       and(
         eq(aiUsageLogs.userId, userId),
@@ -330,7 +335,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Dashboard Analytics
-  async getDashboardStats(userId: number): Promise<{
+  async getDashboardStats(userId: string): Promise<{
     monthlyRevenue: number;
     activeProjects: number;
     aiToolsCost: number;
@@ -382,7 +387,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Experiments (AI Experimentation Lab)
-  async getExperiments(userId: number): Promise<Experiment[]> {
+  async getExperiments(userId: string): Promise<Experiment[]> {
     return await db.select().from(experiments).where(eq(experiments.userId, userId)).orderBy(desc(experiments.createdAt));
   }
 
@@ -429,7 +434,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Insights (Strategic Growth Advisor)
-  async getInsights(userId: number): Promise<Insight[]> {
+  async getInsights(userId: string): Promise<Insight[]> {
     return await db.select().from(insights).where(eq(insights.userId, userId)).orderBy(desc(insights.createdAt));
   }
 
@@ -452,7 +457,7 @@ export class DatabaseStorage implements IStorage {
     await db.delete(insights).where(eq(insights.id, id));
   }
 
-  async getGrowthMetrics(userId: number): Promise<any> {
+  async getGrowthMetrics(userId: string): Promise<any> {
     // Mock implementation - in production this would calculate real metrics
     return {
       currentRevenue: 127500,
@@ -466,7 +471,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Collaborations (Real-time Collaboration)
-  async getCollaborations(userId: number): Promise<Collaboration[]> {
+  async getCollaborations(userId: string): Promise<Collaboration[]> {
     return await db.select().from(collaborations).where(eq(collaborations.userId, userId)).orderBy(desc(collaborations.createdAt));
   }
 
@@ -490,7 +495,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Business Intelligence
-  async getBusinessMetrics(userId: number): Promise<BusinessMetric[]> {
+  async getBusinessMetrics(userId: string): Promise<BusinessMetric[]> {
     return await db.select().from(businessMetrics).where(eq(businessMetrics.userId, userId)).orderBy(desc(businessMetrics.createdAt));
   }
 
@@ -499,7 +504,7 @@ export class DatabaseStorage implements IStorage {
     return newMetric;
   }
 
-  async getBusinessAnalytics(userId: number, period: string): Promise<any> {
+  async getBusinessAnalytics(userId: string, period: string): Promise<any> {
     // Mock implementation - in production this would calculate real analytics
     return {
       revenue: {

@@ -1,17 +1,26 @@
-import { pgTable, text, serial, integer, boolean, timestamp, decimal, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, decimal, jsonb, varchar, index } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-// Users table
+// Session storage table for Replit Auth
+export const sessions = pgTable(
+  "sessions",
+  {
+    sid: varchar("sid").primaryKey(),
+    sess: jsonb("sess").notNull(),
+    expire: timestamp("expire").notNull(),
+  },
+  (table) => [index("IDX_session_expire").on(table.expire)],
+);
+
+// Users table for Replit Auth
 export const users = pgTable("users", {
-  id: serial("id").primaryKey(),
-  username: text("username").notNull().unique(),
-  email: text("email").notNull().unique(),
-  password: text("password").notNull(),
-  name: text("name").notNull(),
-  avatar: text("avatar"),
-  role: text("role").notNull().default("solopreneur"),
+  id: varchar("id").primaryKey().notNull(),
+  email: varchar("email").unique(),
+  firstName: varchar("first_name"),
+  lastName: varchar("last_name"),
+  profileImageUrl: varchar("profile_image_url"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -19,7 +28,7 @@ export const users = pgTable("users", {
 // Clients table
 export const clients = pgTable("clients", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id).notNull(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
   name: text("name").notNull(),
   email: text("email"),
   company: text("company"),
@@ -33,7 +42,7 @@ export const clients = pgTable("clients", {
 // Projects table
 export const projects = pgTable("projects", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id).notNull(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
   clientId: integer("client_id").references(() => clients.id),
   name: text("name").notNull(),
   description: text("description"),
@@ -49,7 +58,7 @@ export const projects = pgTable("projects", {
 // AI Tools table
 export const aiTools = pgTable("ai_tools", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id).notNull(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
   name: text("name").notNull(),
   provider: text("provider").notNull(), // openai, anthropic, google, etc.
   apiKey: text("api_key"),
@@ -65,7 +74,7 @@ export const aiTools = pgTable("ai_tools", {
 // Prompts table
 export const prompts = pgTable("prompts", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id).notNull(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
   name: text("name").notNull(),
   description: text("description"),
   content: text("content").notNull(),
@@ -83,7 +92,7 @@ export const prompts = pgTable("prompts", {
 // Knowledge Base table
 export const knowledgeBase = pgTable("knowledge_base", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id).notNull(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
   title: text("title").notNull(),
   content: text("content").notNull(),
   type: text("type").notNull(), // article, note, resource, template
@@ -98,7 +107,7 @@ export const knowledgeBase = pgTable("knowledge_base", {
 // Automation Workflows table
 export const automationWorkflows = pgTable("automation_workflows", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id).notNull(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
   name: text("name").notNull(),
   description: text("description"),
   trigger: text("trigger").notNull(), // email, schedule, webhook, etc.
@@ -113,7 +122,7 @@ export const automationWorkflows = pgTable("automation_workflows", {
 // Revenue Tracking table
 export const revenueTracking = pgTable("revenue_tracking", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id).notNull(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
   projectId: integer("project_id").references(() => projects.id),
   clientId: integer("client_id").references(() => clients.id),
   amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
@@ -127,7 +136,7 @@ export const revenueTracking = pgTable("revenue_tracking", {
 // AI Usage Logs table
 export const aiUsageLogs = pgTable("ai_usage_logs", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id).notNull(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
   aiToolId: integer("ai_tool_id").references(() => aiTools.id).notNull(),
   projectId: integer("project_id").references(() => projects.id),
   promptId: integer("prompt_id").references(() => prompts.id),
@@ -176,7 +185,7 @@ export const aiToolsRelations = relations(aiTools, ({ one, many }) => ({
 // Experiments table for AI Experimentation Lab
 export const experiments = pgTable("experiments", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id).notNull(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
   name: text("name").notNull(),
   description: text("description"),
   basePrompt: text("base_prompt").notNull(),
@@ -191,7 +200,7 @@ export const experiments = pgTable("experiments", {
 // Growth Insights table for Strategic Growth Advisor
 export const insights = pgTable("insights", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id).notNull(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
   type: text("type").notNull(), // opportunity, risk, optimization, trend
   title: text("title").notNull(),
   description: text("description").notNull(),
@@ -209,7 +218,7 @@ export const insights = pgTable("insights", {
 // Collaborations table for Real-time Collaboration
 export const collaborations = pgTable("collaborations", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id).notNull(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
   projectId: integer("project_id").references(() => projects.id),
   type: text("type").notNull(), // document, project, workflow
   permissions: text("permissions").notNull(), // read, write, admin
@@ -222,7 +231,7 @@ export const collaborations = pgTable("collaborations", {
 // Business Intelligence Metrics table
 export const businessMetrics = pgTable("business_metrics", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id).notNull(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
   metricType: text("metric_type").notNull(), // revenue, clients, projects, ai_usage, productivity
   metricName: text("metric_name").notNull(),
   value: decimal("value", { precision: 15, scale: 4 }).notNull(),
@@ -235,7 +244,7 @@ export const businessMetrics = pgTable("business_metrics", {
 // Content Management tables
 export const contentItems = pgTable("content_items", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id).notNull(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
   title: text("title").notNull(),
   content: text("content").notNull(),
   type: text("type").notNull(), // text, image, video, audio
@@ -251,7 +260,7 @@ export const contentItems = pgTable("content_items", {
 // Email Intelligence tables
 export const emailAnalyses = pgTable("email_analyses", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id).notNull(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
   subject: text("subject").notNull(),
   sender: text("sender").notNull(),
   recipient: text("recipient").notNull(),
@@ -270,7 +279,7 @@ export const emailAnalyses = pgTable("email_analyses", {
 // Task Management for Intelligent Scheduling
 export const tasks = pgTable("tasks", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id).notNull(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
   title: text("title").notNull(),
   description: text("description"),
   priority: text("priority").notNull().default("medium"), // low, medium, high, critical
@@ -288,7 +297,7 @@ export const tasks = pgTable("tasks", {
 // Digital Asset Management
 export const digitalAssets = pgTable("digital_assets", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id).notNull(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
   filename: text("filename").notNull(),
   type: text("type").notNull(), // image, video, audio, document, other
   size: integer("size").notNull(),
@@ -307,7 +316,7 @@ export const digitalAssets = pgTable("digital_assets", {
 // Knowledge Graph entities
 export const knowledgeEntities = pgTable("knowledge_entities", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id).notNull(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
   name: text("name").notNull(),
   type: text("type").notNull(), // person, project, concept, skill, tool, client, document, insight
   description: text("description").notNull(),
@@ -322,7 +331,7 @@ export const knowledgeEntities = pgTable("knowledge_entities", {
 // Knowledge Graph connections
 export const knowledgeConnections = pgTable("knowledge_connections", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id).notNull(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
   fromEntity: integer("from_entity").references(() => knowledgeEntities.id).notNull(),
   toEntity: integer("to_entity").references(() => knowledgeEntities.id).notNull(),
   relationshipType: text("relationship_type").notNull(), // related_to, depends_on, created_by, used_in, influences, part_of
@@ -334,7 +343,7 @@ export const knowledgeConnections = pgTable("knowledge_connections", {
 // Content Pipeline automation
 export const contentPipelines = pgTable("content_pipelines", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id).notNull(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
   name: text("name").notNull(),
   description: text("description"),
   stages: jsonb("stages").default([]),
@@ -427,13 +436,14 @@ export const contentPipelinesRelations = relations(contentPipelines, ({ one }) =
 }));
 
 // Schema types
-export const insertUserSchema = createInsertSchema(users).pick({
-  username: true,
-  email: true,
-  password: true,
-  name: true,
-  avatar: true,
-  role: true,
+export const insertUserSchema = createInsertSchema(users).omit({
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const upsertUserSchema = createInsertSchema(users).omit({
+  createdAt: true,
+  updatedAt: true,
 });
 
 export const insertClientSchema = createInsertSchema(clients).omit({
@@ -485,6 +495,7 @@ export const insertAiUsageLogSchema = createInsertSchema(aiUsageLogs).omit({
 // Type exports
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
+export type UpsertUser = z.infer<typeof upsertUserSchema>;
 export type Client = typeof clients.$inferSelect;
 export type InsertClient = z.infer<typeof insertClientSchema>;
 export type Project = typeof projects.$inferSelect;

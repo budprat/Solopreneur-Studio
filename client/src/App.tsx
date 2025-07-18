@@ -5,6 +5,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AppLayout } from "@/components/layout/app-layout";
+import { useAuth } from "@/hooks/useAuth";
+import Landing from "@/pages/landing";
 import Dashboard from "@/pages/dashboard";
 import Projects from "@/pages/projects";
 import AITools from "@/pages/ai-tools";
@@ -25,29 +27,46 @@ import ClientWorkspace from "@/pages/client-workspace";
 import NotFound from "@/pages/not-found";
 
 function Router() {
+  const { isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
   return (
-    <AppLayout>
-      <Switch>
-        <Route path="/" component={Dashboard} />
-        <Route path="/projects" component={Projects} />
-        <Route path="/ai-tools" component={AITools} />
-        <Route path="/prompts" component={Prompts} />
-        <Route path="/knowledge" component={Knowledge} />
-        <Route path="/automation" component={Automation} />
-        <Route path="/revenue" component={Revenue} />
-        <Route path="/experiment-lab" component={ExperimentLab} />
-        <Route path="/growth-advisor" component={GrowthAdvisor} />
-        <Route path="/business-intelligence" component={BusinessIntelligence} />
-        <Route path="/content-creation" component={ContentCreation} />
-        <Route path="/email-intelligence" component={EmailIntelligence} />
-        <Route path="/intelligent-scheduling" component={IntelligentScheduling} />
-        <Route path="/digital-assets" component={DigitalAssets} />
-        <Route path="/knowledge-graph" component={KnowledgeGraph} />
-        <Route path="/content-pipeline" component={ContentPipeline} />
-        <Route path="/client/:id" component={ClientWorkspace} />
-        <Route component={NotFound} />
-      </Switch>
-    </AppLayout>
+    <Switch>
+      {!isAuthenticated ? (
+        <Route path="/" component={Landing} />
+      ) : (
+        <AppLayout>
+          <Switch>
+            <Route path="/" component={Dashboard} />
+            <Route path="/projects" component={Projects} />
+            <Route path="/ai-tools" component={AITools} />
+            <Route path="/prompts" component={Prompts} />
+            <Route path="/knowledge" component={Knowledge} />
+            <Route path="/automation" component={Automation} />
+            <Route path="/revenue" component={Revenue} />
+            <Route path="/experiment-lab" component={ExperimentLab} />
+            <Route path="/growth-advisor" component={GrowthAdvisor} />
+            <Route path="/business-intelligence" component={BusinessIntelligence} />
+            <Route path="/content-creation" component={ContentCreation} />
+            <Route path="/email-intelligence" component={EmailIntelligence} />
+            <Route path="/intelligent-scheduling" component={IntelligentScheduling} />
+            <Route path="/digital-assets" component={DigitalAssets} />
+            <Route path="/knowledge-graph" component={KnowledgeGraph} />
+            <Route path="/content-pipeline" component={ContentPipeline} />
+            <Route path="/client/:id" component={ClientWorkspace} />
+            <Route component={NotFound} />
+          </Switch>
+        </AppLayout>
+      )}
+      <Route component={NotFound} />
+    </Switch>
   );
 }
 
