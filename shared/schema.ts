@@ -232,6 +232,122 @@ export const businessMetrics = pgTable("business_metrics", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Content Management tables
+export const contentItems = pgTable("content_items", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  type: text("type").notNull(), // text, image, video, audio
+  status: text("status").notNull().default("draft"), // draft, review, published
+  platform: text("platform"),
+  tags: text("tags").array(),
+  scheduledFor: timestamp("scheduled_for"),
+  performance: jsonb("performance").default({}),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Email Intelligence tables
+export const emailAnalyses = pgTable("email_analyses", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  subject: text("subject").notNull(),
+  sender: text("sender").notNull(),
+  recipient: text("recipient").notNull(),
+  content: text("content").notNull(),
+  receivedAt: timestamp("received_at").notNull(),
+  urgency: text("urgency").notNull(), // low, medium, high, critical
+  category: text("category").notNull(), // project_request, follow_up, payment, support, other
+  extractedData: jsonb("extracted_data").default({}),
+  sentiment: text("sentiment").notNull(), // positive, neutral, negative
+  suggestedActions: text("suggested_actions").array(),
+  autoResponse: text("auto_response"),
+  status: text("status").notNull().default("unread"), // unread, read, responded, archived
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Task Management for Intelligent Scheduling
+export const tasks = pgTable("tasks", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  title: text("title").notNull(),
+  description: text("description"),
+  priority: text("priority").notNull().default("medium"), // low, medium, high, critical
+  estimatedHours: integer("estimated_hours").notNull(),
+  deadline: timestamp("deadline"),
+  project: text("project"),
+  energyRequired: text("energy_required").notNull().default("medium"), // low, medium, high
+  scheduledFor: timestamp("scheduled_for"),
+  status: text("status").notNull().default("pending"), // pending, in_progress, completed
+  focusTimeRequired: boolean("focus_time_required").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Digital Asset Management
+export const digitalAssets = pgTable("digital_assets", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  filename: text("filename").notNull(),
+  type: text("type").notNull(), // image, video, audio, document, other
+  size: integer("size").notNull(),
+  url: text("url").notNull(),
+  thumbnailUrl: text("thumbnail_url"),
+  tags: text("tags").array(),
+  aiGeneratedTags: text("ai_generated_tags").array(),
+  description: text("description"),
+  usage: jsonb("usage").default({}),
+  metadata: jsonb("metadata").default({}),
+  aiAnalysis: jsonb("ai_analysis").default({}),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Knowledge Graph entities
+export const knowledgeEntities = pgTable("knowledge_entities", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  name: text("name").notNull(),
+  type: text("type").notNull(), // person, project, concept, skill, tool, client, document, insight
+  description: text("description").notNull(),
+  importance: integer("importance").notNull(), // 0-100
+  connectionCount: integer("connection_count").default(0),
+  tags: text("tags").array(),
+  metadata: jsonb("metadata").default({}),
+  lastUpdated: timestamp("last_updated").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Knowledge Graph connections
+export const knowledgeConnections = pgTable("knowledge_connections", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  fromEntity: integer("from_entity").references(() => knowledgeEntities.id).notNull(),
+  toEntity: integer("to_entity").references(() => knowledgeEntities.id).notNull(),
+  relationshipType: text("relationship_type").notNull(), // related_to, depends_on, created_by, used_in, influences, part_of
+  strength: integer("strength").notNull(), // 0-100
+  context: text("context"),
+  discoveredAt: timestamp("discovered_at").defaultNow(),
+});
+
+// Content Pipeline automation
+export const contentPipelines = pgTable("content_pipelines", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  name: text("name").notNull(),
+  description: text("description"),
+  stages: jsonb("stages").default([]),
+  status: text("status").notNull().default("active"), // active, paused, completed, failed
+  progress: integer("progress").default(0),
+  totalRuns: integer("total_runs").default(0),
+  successRate: integer("success_rate").default(0),
+  averageTime: integer("average_time").default(0),
+  lastRun: timestamp("last_run"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 export const promptsRelations = relations(prompts, ({ one, many }) => ({
   user: one(users, { fields: [prompts.userId], references: [users.id] }),
   aiTool: one(aiTools, { fields: [prompts.aiToolId], references: [aiTools.id] }),
@@ -275,6 +391,39 @@ export const collaborationsRelations = relations(collaborations, ({ one }) => ({
 
 export const businessMetricsRelations = relations(businessMetrics, ({ one }) => ({
   user: one(users, { fields: [businessMetrics.userId], references: [users.id] }),
+}));
+
+// New table relations
+export const contentItemsRelations = relations(contentItems, ({ one }) => ({
+  user: one(users, { fields: [contentItems.userId], references: [users.id] }),
+}));
+
+export const emailAnalysesRelations = relations(emailAnalyses, ({ one }) => ({
+  user: one(users, { fields: [emailAnalyses.userId], references: [users.id] }),
+}));
+
+export const tasksRelations = relations(tasks, ({ one }) => ({
+  user: one(users, { fields: [tasks.userId], references: [users.id] }),
+}));
+
+export const digitalAssetsRelations = relations(digitalAssets, ({ one }) => ({
+  user: one(users, { fields: [digitalAssets.userId], references: [users.id] }),
+}));
+
+export const knowledgeEntitiesRelations = relations(knowledgeEntities, ({ one, many }) => ({
+  user: one(users, { fields: [knowledgeEntities.userId], references: [users.id] }),
+  connectionsFrom: many(knowledgeConnections, { relationName: "fromEntity" }),
+  connectionsTo: many(knowledgeConnections, { relationName: "toEntity" }),
+}));
+
+export const knowledgeConnectionsRelations = relations(knowledgeConnections, ({ one }) => ({
+  user: one(users, { fields: [knowledgeConnections.userId], references: [users.id] }),
+  fromEntity: one(knowledgeEntities, { fields: [knowledgeConnections.fromEntity], references: [knowledgeEntities.id], relationName: "fromEntity" }),
+  toEntity: one(knowledgeEntities, { fields: [knowledgeConnections.toEntity], references: [knowledgeEntities.id], relationName: "toEntity" }),
+}));
+
+export const contentPipelinesRelations = relations(contentPipelines, ({ one }) => ({
+  user: one(users, { fields: [contentPipelines.userId], references: [users.id] }),
 }));
 
 // Schema types
@@ -385,3 +534,27 @@ export type Collaboration = typeof collaborations.$inferSelect;
 export type InsertCollaboration = z.infer<typeof insertCollaborationSchema>;
 export type BusinessMetric = typeof businessMetrics.$inferSelect;
 export type InsertBusinessMetric = z.infer<typeof insertBusinessMetricSchema>;
+
+// New feature schema exports
+export const insertContentItemSchema = createInsertSchema(contentItems).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertEmailAnalysisSchema = createInsertSchema(emailAnalyses).omit({ id: true, createdAt: true });
+export const insertTaskSchema = createInsertSchema(tasks).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertDigitalAssetSchema = createInsertSchema(digitalAssets).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertKnowledgeEntitySchema = createInsertSchema(knowledgeEntities).omit({ id: true, createdAt: true, lastUpdated: true });
+export const insertKnowledgeConnectionSchema = createInsertSchema(knowledgeConnections).omit({ id: true, discoveredAt: true });
+export const insertContentPipelineSchema = createInsertSchema(contentPipelines).omit({ id: true, createdAt: true, updatedAt: true });
+
+export type ContentItem = typeof contentItems.$inferSelect;
+export type InsertContentItem = z.infer<typeof insertContentItemSchema>;
+export type EmailAnalysis = typeof emailAnalyses.$inferSelect;
+export type InsertEmailAnalysis = z.infer<typeof insertEmailAnalysisSchema>;
+export type Task = typeof tasks.$inferSelect;
+export type InsertTask = z.infer<typeof insertTaskSchema>;
+export type DigitalAsset = typeof digitalAssets.$inferSelect;
+export type InsertDigitalAsset = z.infer<typeof insertDigitalAssetSchema>;
+export type KnowledgeEntity = typeof knowledgeEntities.$inferSelect;
+export type InsertKnowledgeEntity = z.infer<typeof insertKnowledgeEntitySchema>;
+export type KnowledgeConnection = typeof knowledgeConnections.$inferSelect;
+export type InsertKnowledgeConnection = z.infer<typeof insertKnowledgeConnectionSchema>;
+export type ContentPipeline = typeof contentPipelines.$inferSelect;
+export type InsertContentPipeline = z.infer<typeof insertContentPipelineSchema>;

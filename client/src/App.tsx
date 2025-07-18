@@ -15,6 +15,12 @@ import Revenue from "@/pages/revenue";
 import ExperimentLab from "@/pages/experiment-lab";
 import GrowthAdvisor from "@/pages/growth-advisor";
 import BusinessIntelligence from "@/pages/business-intelligence";
+import ContentCreation from "@/pages/content-creation";
+import EmailIntelligence from "@/pages/email-intelligence";
+import IntelligentScheduling from "@/pages/intelligent-scheduling";
+import DigitalAssets from "@/pages/digital-assets";
+import KnowledgeGraph from "@/pages/knowledge-graph";
+import ContentPipeline from "@/pages/content-pipeline";
 import ClientWorkspace from "@/pages/client-workspace";
 import NotFound from "@/pages/not-found";
 
@@ -32,6 +38,12 @@ function Router() {
         <Route path="/experiment-lab" component={ExperimentLab} />
         <Route path="/growth-advisor" component={GrowthAdvisor} />
         <Route path="/business-intelligence" component={BusinessIntelligence} />
+        <Route path="/content-creation" component={ContentCreation} />
+        <Route path="/email-intelligence" component={EmailIntelligence} />
+        <Route path="/intelligent-scheduling" component={IntelligentScheduling} />
+        <Route path="/digital-assets" component={DigitalAssets} />
+        <Route path="/knowledge-graph" component={KnowledgeGraph} />
+        <Route path="/content-pipeline" component={ContentPipeline} />
         <Route path="/client/:id" component={ClientWorkspace} />
         <Route component={NotFound} />
       </Switch>

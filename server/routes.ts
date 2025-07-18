@@ -1,7 +1,13 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertClientSchema, insertProjectSchema, insertAiToolSchema, insertPromptSchema, insertKnowledgeBaseSchema, insertAutomationWorkflowSchema, insertRevenueTrackingSchema, insertExperimentSchema, insertInsightSchema, insertCollaborationSchema, insertBusinessMetricSchema } from "@shared/schema";
+import { 
+  insertClientSchema, insertProjectSchema, insertAiToolSchema, insertPromptSchema, 
+  insertKnowledgeBaseSchema, insertAutomationWorkflowSchema, insertRevenueTrackingSchema, 
+  insertExperimentSchema, insertInsightSchema, insertCollaborationSchema, insertBusinessMetricSchema,
+  insertContentItemSchema, insertEmailAnalysisSchema, insertTaskSchema, insertDigitalAssetSchema,
+  insertKnowledgeEntitySchema, insertKnowledgeConnectionSchema, insertContentPipelineSchema
+} from "@shared/schema";
 import { z } from "zod";
 import { fromZodError } from "zod-validation-error";
 
@@ -402,6 +408,203 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else {
         res.status(500).json({ error: "Failed to create collaboration" });
       }
+    }
+  });
+
+  // Content Creation routes
+  app.get("/api/content", async (req, res) => {
+    try {
+      // Mock response for content items
+      res.json([]);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch content" });
+    }
+  });
+
+  app.post("/api/content", async (req, res) => {
+    try {
+      // Mock response for creating content
+      res.status(201).json({ id: Date.now(), ...req.body });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to create content" });
+    }
+  });
+
+  app.post("/api/content/generate", async (req, res) => {
+    try {
+      // Mock AI content generation
+      res.json({ 
+        content: "Generated content based on: " + req.body.prompt,
+        type: req.body.type || "text"
+      });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to generate content" });
+    }
+  });
+
+  // Email Intelligence routes
+  app.get("/api/emails", async (req, res) => {
+    try {
+      // Mock response for email analyses
+      res.json([]);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch emails" });
+    }
+  });
+
+  app.post("/api/emails/:id/process", async (req, res) => {
+    try {
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to process email" });
+    }
+  });
+
+  app.post("/api/emails/:id/respond", async (req, res) => {
+    try {
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to send response" });
+    }
+  });
+
+  app.get("/api/email-templates", async (req, res) => {
+    try {
+      res.json([]);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch email templates" });
+    }
+  });
+
+  // Intelligent Scheduling routes
+  app.get("/api/tasks", async (req, res) => {
+    try {
+      res.json([]);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch tasks" });
+    }
+  });
+
+  app.get("/api/energy-patterns", async (req, res) => {
+    try {
+      res.json([]);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch energy patterns" });
+    }
+  });
+
+  app.get("/api/schedule/:date", async (req, res) => {
+    try {
+      res.json([]);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch schedule" });
+    }
+  });
+
+  app.post("/api/schedule/optimize", async (req, res) => {
+    try {
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to optimize schedule" });
+    }
+  });
+
+  // Digital Asset Management routes
+  app.get("/api/assets", async (req, res) => {
+    try {
+      res.json([]);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch assets" });
+    }
+  });
+
+  app.post("/api/assets/upload", async (req, res) => {
+    try {
+      res.status(201).json({ id: Date.now(), success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to upload asset" });
+    }
+  });
+
+  app.post("/api/assets/:id/analyze", async (req, res) => {
+    try {
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to analyze asset" });
+    }
+  });
+
+  app.get("/api/asset-collections", async (req, res) => {
+    try {
+      res.json([]);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch asset collections" });
+    }
+  });
+
+  // Knowledge Graph routes
+  app.get("/api/knowledge/entities", async (req, res) => {
+    try {
+      res.json([]);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch knowledge entities" });
+    }
+  });
+
+  app.get("/api/knowledge/connections", async (req, res) => {
+    try {
+      res.json([]);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch knowledge connections" });
+    }
+  });
+
+  app.get("/api/knowledge/insights", async (req, res) => {
+    try {
+      res.json([]);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch knowledge insights" });
+    }
+  });
+
+  app.post("/api/knowledge/analyze", async (req, res) => {
+    try {
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to analyze knowledge" });
+    }
+  });
+
+  // Content Pipeline routes
+  app.get("/api/content-pipelines", async (req, res) => {
+    try {
+      res.json([]);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch content pipelines" });
+    }
+  });
+
+  app.post("/api/content-pipelines/:id/run", async (req, res) => {
+    try {
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to run pipeline" });
+    }
+  });
+
+  app.post("/api/content-pipelines/:id/pause", async (req, res) => {
+    try {
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to pause pipeline" });
+    }
+  });
+
+  app.get("/api/content-campaigns", async (req, res) => {
+    try {
+      res.json([]);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch content campaigns" });
     }
   });
 
