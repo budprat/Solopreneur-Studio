@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
-import { Brain, Home, Folder, Bot, Code, Book, ServerCog, TrendingUp, X, Target, BarChart3, FileText, Mail, Calendar, Database, Network, Workflow } from "lucide-react";
+import { Brain, Home, Folder, Bot, Code, Book, ServerCog, TrendingUp, X, Target, BarChart3, FileText, Mail, Calendar, Database, Network, Workflow, Sparkles, Trophy } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 interface SidebarProps {
@@ -29,6 +29,8 @@ const advancedItems = [
   { icon: Database, label: "Digital Assets", href: "/digital-assets", badge: "NEW" },
   { icon: Network, label: "Knowledge Graph", href: "/knowledge-graph", badge: "NEW" },
   { icon: Workflow, label: "Content Pipeline", href: "/content-pipeline", badge: "NEW" },
+  { icon: Sparkles, label: "AI Inspiration", href: "/inspiration", badge: "NEW" },
+  { icon: Trophy, label: "Progress Tracker", href: "/progress", badge: "NEW" },
 ];
 
 const mockClients = [

@@ -870,6 +870,255 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // AI Inspiration Generator routes
+  app.get('/api/inspiration/quote', async (req, res) => {
+    try {
+      const { generateInspirationalQuote } = await import('./openai');
+      const quote = await generateInspirationalQuote('solopreneurship');
+      res.json(quote);
+    } catch (error) {
+      console.error('Error generating inspirational quote:', error);
+      res.json("Every great journey begins with a single step forward.");
+    }
+  });
+
+  app.post('/api/inspiration/ideas', isAuthenticated, async (req: any, res) => {
+    try {
+      const { userContext, ideaType, count } = req.body;
+      const { generateCreativeIdeas } = await import('./openai');
+      
+      const ideas = await generateCreativeIdeas(userContext, ideaType, count);
+      
+      // Fallback to mock data if OpenAI fails
+      if (ideas.length === 0) {
+        const mockIdeas = [
+          {
+            title: "AI-Powered Content Automation Hub",
+            description: "Create a comprehensive platform that automatically generates, schedules, and optimizes content across multiple social media platforms using AI.",
+            category: "automation",
+            difficulty: "medium",
+            timeToImplement: "4-6 weeks",
+            potentialRevenue: "$2,000-5,000/month",
+            requiredSkills: ["AI Integration", "Content Strategy", "Social Media Marketing"],
+            nextSteps: [
+              "Research AI content generation APIs",
+              "Design user interface mockups",
+              "Develop MVP with basic automation"
+            ],
+            inspiration: "Transform your content creation from hours to minutes with the power of AI automation!"
+          },
+          {
+            title: "Micro-SaaS for Small Business Analytics",
+            description: "Build a simple, focused analytics tool that helps small businesses track their most important metrics without complexity.",
+            category: "business",
+            difficulty: "easy",
+            timeToImplement: "2-3 weeks",
+            potentialRevenue: "$500-2,000/month",
+            requiredSkills: ["Data Analysis", "Web Development", "Business Intelligence"],
+            nextSteps: [
+              "Identify key metrics small businesses need",
+              "Create simple dashboard designs",
+              "Build basic data visualization features"
+            ],
+            inspiration: "Simplicity is the ultimate sophistication. Help businesses focus on what matters most!"
+          },
+          {
+            title: "Personal Brand Accelerator Course",
+            description: "Develop a comprehensive online course that teaches solopreneurs how to build and monetize their personal brand effectively.",
+            category: "content",
+            difficulty: "medium",
+            timeToImplement: "6-8 weeks",
+            potentialRevenue: "$1,000-3,000/month",
+            requiredSkills: ["Personal Branding", "Course Creation", "Marketing"],
+            nextSteps: [
+              "Outline course curriculum",
+              "Create video content and materials",
+              "Set up course delivery platform"
+            ],
+            inspiration: "Your unique story is your competitive advantage. Help others discover theirs!"
+          }
+        ];
+        return res.json(mockIdeas);
+      }
+      
+      res.json(ideas);
+    } catch (error) {
+      console.error('Error generating creative ideas:', error);
+      res.status(500).json({ message: 'Failed to generate creative ideas' });
+    }
+  });
+
+  app.post('/api/inspiration/content', isAuthenticated, async (req: any, res) => {
+    try {
+      const { topic, contentType, targetAudience, count } = req.body;
+      const { generateContentIdeas } = await import('./openai');
+      
+      const ideas = await generateContentIdeas(topic, contentType, targetAudience, count);
+      
+      // Fallback to mock data if OpenAI fails
+      if (ideas.length === 0) {
+        const mockContentIdeas = [
+          {
+            title: "10 AI Tools Every Solopreneur Should Use in 2025",
+            description: "A comprehensive guide showcasing the most powerful AI tools that can transform a solopreneur's workflow and productivity.",
+            type: "blog",
+            audience: "solopreneurs",
+            keyPoints: [
+              "AI writing assistants for content creation",
+              "Automated social media scheduling tools",
+              "AI-powered customer service solutions",
+              "Financial management and analytics tools"
+            ],
+            callToAction: "Download our free AI tools checklist and start automating your business today!",
+            estimatedTime: "3-4 hours"
+          },
+          {
+            title: "From Idea to $10K: My 90-Day Solopreneur Journey",
+            description: "A behind-the-scenes look at how one solopreneur built a profitable business in just 90 days.",
+            type: "video",
+            audience: "aspiring entrepreneurs",
+            keyPoints: [
+              "Day 1-30: Market research and validation",
+              "Day 31-60: Building the MVP",
+              "Day 61-90: Launch and scaling strategies",
+              "Lessons learned and mistakes to avoid"
+            ],
+            callToAction: "Subscribe for more entrepreneurship insights and get our free 90-day action plan!",
+            estimatedTime: "2-3 hours"
+          },
+          {
+            title: "The Solopreneur's Guide to Work-Life Balance",
+            description: "Practical strategies for maintaining mental health and productivity while building a solo business.",
+            type: "social",
+            audience: "solopreneurs",
+            keyPoints: [
+              "Setting boundaries with clients and customers",
+              "Time management techniques that actually work",
+              "Building a support network as a solo entrepreneur",
+              "When to say no to opportunities"
+            ],
+            callToAction: "Share your own work-life balance tips in the comments below!",
+            estimatedTime: "1-2 hours"
+          }
+        ];
+        return res.json(mockContentIdeas);
+      }
+      
+      res.json(ideas);
+    } catch (error) {
+      console.error('Error generating content ideas:', error);
+      res.status(500).json({ message: 'Failed to generate content ideas' });
+    }
+  });
+
+  // Gamification routes
+  app.get('/api/gamification/stats', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      
+      // In a real application, this would fetch from database
+      const mockStats = {
+        totalProjects: 15,
+        completedProjects: 12,
+        activeStreak: 7,
+        longestStreak: 21,
+        totalAiUsage: 234,
+        totalRevenue: 5800,
+        level: 4,
+        xp: 680,
+        xpToNextLevel: 320
+      };
+      
+      res.json(mockStats);
+    } catch (error) {
+      console.error('Error fetching gamification stats:', error);
+      res.status(500).json({ message: 'Failed to fetch gamification stats' });
+    }
+  });
+
+  app.get('/api/gamification/achievements', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      
+      // In a real application, this would fetch from database
+      const mockAchievements = [
+        {
+          id: 'first-project',
+          title: 'First Steps',
+          description: 'Complete your first project',
+          icon: 'target',
+          category: 'milestone',
+          progress: 1,
+          maxProgress: 1,
+          unlocked: true,
+          unlockedAt: new Date(Date.now() - 86400000 * 10), // 10 days ago
+          reward: '+50 XP'
+        },
+        {
+          id: 'ai-enthusiast',
+          title: 'AI Enthusiast',
+          description: 'Use AI tools 100 times',
+          icon: 'brain',
+          category: 'ai-usage',
+          progress: 78,
+          maxProgress: 100,
+          unlocked: false,
+          reward: '+100 XP + AI Master badge'
+        },
+        {
+          id: 'streak-starter',
+          title: 'Streak Starter',
+          description: 'Maintain a 7-day work streak',
+          icon: 'flame',
+          category: 'streak',
+          progress: 7,
+          maxProgress: 7,
+          unlocked: true,
+          unlockedAt: new Date(Date.now() - 86400000 * 1), // 1 day ago
+          reward: '+75 XP'
+        },
+        {
+          id: 'productivity-master',
+          title: 'Productivity Master',
+          description: 'Complete 25 tasks in a week',
+          icon: 'zap',
+          category: 'productivity',
+          progress: 18,
+          maxProgress: 25,
+          unlocked: false,
+          reward: '+120 XP + Productivity Badge'
+        },
+        {
+          id: 'revenue-milestone',
+          title: 'First Revenue',
+          description: 'Earn your first $1,000',
+          icon: 'diamond',
+          category: 'revenue',
+          progress: 580,
+          maxProgress: 1000,
+          unlocked: false,
+          reward: '+200 XP + Revenue Milestone Badge'
+        },
+        {
+          id: 'community-builder',
+          title: 'Community Builder',
+          description: 'Help 10 other solopreneurs',
+          icon: 'heart',
+          category: 'social',
+          progress: 3,
+          maxProgress: 10,
+          unlocked: false,
+          reward: '+150 XP + Community Champion Badge'
+        }
+      ];
+      
+      res.json(mockAchievements);
+    } catch (error) {
+      console.error('Error fetching achievements:', error);
+      res.status(500).json({ message: 'Failed to fetch achievements' });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
