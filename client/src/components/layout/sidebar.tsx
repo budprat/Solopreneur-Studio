@@ -61,16 +61,16 @@ export function Sidebar({ open, onClose }: SidebarProps) {
             
             return (
               <Link key={item.href} href={item.href}>
-                <a
+                <div
                   className={cn(
-                    "nav-link flex items-center px-3 py-2 text-sm font-medium rounded-lg",
+                    "nav-link flex items-center px-3 py-2 text-sm font-medium rounded-lg cursor-pointer",
                     isActive && "active"
                   )}
                   onClick={onClose}
                 >
                   <Icon className="w-5 h-5 mr-3" />
                   {item.label}
-                </a>
+                </div>
               </Link>
             );
           })}
@@ -84,15 +84,15 @@ export function Sidebar({ open, onClose }: SidebarProps) {
           <div className="space-y-1">
             {mockClients.map((client) => (
               <Link key={client.id} href={`/client/${client.id}`}>
-                <a
-                  className="nav-link flex items-center px-3 py-2 text-sm font-medium rounded-lg"
+                <div
+                  className="nav-link flex items-center px-3 py-2 text-sm font-medium rounded-lg cursor-pointer"
                   onClick={onClose}
                 >
                   <div className={cn("w-5 h-5 mr-3 rounded-full flex items-center justify-center", client.color)}>
                     <span className="text-white text-xs">{client.initials}</span>
                   </div>
                   {client.name}
-                </a>
+                </div>
               </Link>
             ))}
           </div>
