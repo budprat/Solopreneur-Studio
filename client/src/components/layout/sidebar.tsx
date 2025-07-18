@@ -16,6 +16,7 @@ const navigationItems = [
   { icon: Book, label: "Knowledge Base", href: "/knowledge" },
   { icon: ServerCog, label: "Automation", href: "/automation" },
   { icon: TrendingUp, label: "Revenue Analytics", href: "/revenue" },
+  { icon: BarChart3, label: "Analytics Hub", href: "/analytics" },
 ];
 
 const advancedItems = [

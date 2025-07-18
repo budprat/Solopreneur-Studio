@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Sidebar } from "./sidebar";
 import { TopBar } from "./top-bar";
+import { FloatingActionButton } from "@/components/ui/quick-actions";
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -28,6 +29,9 @@ export function AppLayout({ children }: AppLayoutProps) {
           onClick={() => setSidebarOpen(false)}
         />
       )}
+      
+      {/* Floating Action Button */}
+      <FloatingActionButton />
     </div>
   );
 }

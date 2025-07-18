@@ -23,6 +23,7 @@ import IntelligentScheduling from "@/pages/intelligent-scheduling";
 import DigitalAssets from "@/pages/digital-assets";
 import KnowledgeGraph from "@/pages/knowledge-graph";
 import ContentPipeline from "@/pages/content-pipeline";
+import Analytics from "@/pages/analytics";
 import ClientWorkspace from "@/pages/client-workspace";
 import NotFound from "@/pages/not-found";
 
@@ -60,6 +61,7 @@ function Router() {
             <Route path="/digital-assets" component={DigitalAssets} />
             <Route path="/knowledge-graph" component={KnowledgeGraph} />
             <Route path="/content-pipeline" component={ContentPipeline} />
+            <Route path="/analytics" component={Analytics} />
             <Route path="/client/:id" component={ClientWorkspace} />
             <Route component={NotFound} />
           </Switch>

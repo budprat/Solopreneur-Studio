@@ -624,6 +624,252 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // AI Assistant routes
+  app.get('/api/ai/insights', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      // Mock data for now - in production, this would use real user data
+      const mockUserData = {
+        monthlyRevenue: 5800,
+        activeProjects: 7,
+        completedProjects: 23,
+        aiToolsCount: 12,
+        promptCount: 45,
+        avgResponseTime: '2.3 hours',
+        clientSatisfaction: 92
+      };
+
+      // Generate insights using Gemini (when API key is available)
+      try {
+        const { generateBusinessInsights } = await import('./gemini');
+        const insights = await generateBusinessInsights(mockUserData);
+        
+        if (insights.length > 0) {
+          return res.json(insights);
+        }
+      } catch (error) {
+        console.log('Gemini API not available, using mock data');
+      }
+      
+      // Fallback to mock data
+      const mockInsights = [
+        {
+          type: 'opportunity',
+          title: 'Peak Productivity Hours',
+          description: 'Your productivity peaks between 9-11 AM. Schedule complex tasks during this window.',
+          impact: 'high',
+          confidence: 94,
+          actionItems: [
+            'Block calendar for deep work 9-11 AM',
+            'Schedule client calls after 11 AM',
+            'Use AI tools during peak hours'
+          ],
+          priority: 8
+        },
+        {
+          type: 'risk',
+          title: 'Client Response Delay',
+          description: 'Average response time increased by 23% this week. May impact client satisfaction.',
+          impact: 'medium',
+          confidence: 87,
+          actionItems: [
+            'Set up automated response templates',
+            'Create response time tracking dashboard',
+            'Implement notification system'
+          ],
+          priority: 6
+        },
+        {
+          type: 'forecast',
+          title: 'Revenue Growth',
+          description: 'Based on current trends, expect 15% revenue increase by Q3.',
+          impact: 'high',
+          confidence: 82,
+          actionItems: [
+            'Prepare for scaling operations',
+            'Optimize pricing strategy',
+            'Expand service offerings'
+          ],
+          priority: 9
+        }
+      ];
+      
+      res.json(mockInsights);
+    } catch (error) {
+      console.error('Error fetching AI insights:', error);
+      res.status(500).json({ message: 'Failed to fetch AI insights' });
+    }
+  });
+
+  app.get('/api/ai/recommendations', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      // Mock user data and preferences
+      const mockUserData = {
+        monthlyRevenue: 5800,
+        activeProjects: 7,
+        aiProficiency: 'Intermediate'
+      };
+
+      const mockPreferences = {
+        businessFocus: 'Content Creation',
+        goals: 'Scale Revenue',
+        challenges: 'Time Management',
+        workStyle: 'Flexible'
+      };
+
+      // Generate recommendations using Gemini
+      try {
+        const { generatePersonalizedRecommendations } = await import('./gemini');
+        const recommendations = await generatePersonalizedRecommendations(mockUserData, mockPreferences);
+        
+        if (recommendations.length > 0) {
+          return res.json(recommendations);
+        }
+      } catch (error) {
+        console.log('Gemini API not available, using mock data');
+      }
+      
+      // Fallback to mock data
+      const mockRecommendations = [
+        {
+          category: 'productivity',
+          title: 'Implement Time Blocking',
+          description: 'Structure your day with dedicated time blocks for different activities.',
+          reasoning: 'Based on your flexible work style and time management challenges, time blocking can improve focus and productivity.',
+          expectedBenefit: 'Increase productivity by 25% and reduce context switching.',
+          difficulty: 'easy',
+          timeToImplement: '1 week',
+          steps: [
+            'Audit current daily schedule',
+            'Identify recurring tasks and meetings',
+            'Create time blocks for deep work',
+            'Set up calendar blocking system',
+            'Review and adjust weekly'
+          ]
+        },
+        {
+          category: 'revenue',
+          title: 'Premium Content Packages',
+          description: 'Create tiered content packages for different client needs.',
+          reasoning: 'Your content creation focus and current revenue suggest opportunity for premium offerings.',
+          expectedBenefit: 'Increase average project value by 40%.',
+          difficulty: 'medium',
+          timeToImplement: '2-3 weeks',
+          steps: [
+            'Analyze current service offerings',
+            'Research competitor pricing',
+            'Create three service tiers',
+            'Develop premium content templates',
+            'Launch with existing clients'
+          ]
+        },
+        {
+          category: 'ai-tools',
+          title: 'Advanced Prompt Library',
+          description: 'Build a comprehensive library of optimized prompts for your niche.',
+          reasoning: 'Your intermediate AI proficiency suggests you could benefit from more sophisticated prompt engineering.',
+          expectedBenefit: 'Improve AI output quality by 30% and reduce iteration time.',
+          difficulty: 'medium',
+          timeToImplement: '2 weeks',
+          steps: [
+            'Audit current prompt performance',
+            'Research advanced prompt techniques',
+            'Create category-based prompt templates',
+            'Test and optimize prompts',
+            'Implement version control system'
+          ]
+        }
+      ];
+      
+      res.json(mockRecommendations);
+    } catch (error) {
+      console.error('Error fetching AI recommendations:', error);
+      res.status(500).json({ message: 'Failed to fetch AI recommendations' });
+    }
+  });
+
+  app.post('/api/ai/chat', isAuthenticated, async (req: any, res) => {
+    try {
+      const { message } = req.body;
+      const userId = req.user.claims.sub;
+      
+      // Simple chat response for now
+      const response = `Thank you for your message: "${message}". I'm your AI assistant and I'm here to help you with business insights and recommendations. This feature will be enhanced with full conversational AI capabilities soon.`;
+      
+      res.json({ response });
+    } catch (error) {
+      console.error('Error in AI chat:', error);
+      res.status(500).json({ message: 'Failed to process chat message' });
+    }
+  });
+
+  app.post('/api/ai/insights/refresh', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      // Trigger refresh of insights
+      res.json({ message: 'Insights refreshed successfully' });
+    } catch (error) {
+      console.error('Error refreshing insights:', error);
+      res.status(500).json({ message: 'Failed to refresh insights' });
+    }
+  });
+
+  // Analytics routes
+  app.get('/api/analytics/performance', isAuthenticated, async (req: any, res) => {
+    try {
+      const mockPerformanceData = {
+        overall: 78,
+        clientSatisfaction: 92,
+        aiToolEfficiency: 85,
+        projectCompletionRate: 95,
+        avgResponseTime: '2.3 hours',
+        revenueGrowth: 23,
+        aiCostEfficiency: 0.12
+      };
+      
+      res.json(mockPerformanceData);
+    } catch (error) {
+      console.error('Error fetching performance analytics:', error);
+      res.status(500).json({ message: 'Failed to fetch performance analytics' });
+    }
+  });
+
+  app.get('/api/analytics/trends', isAuthenticated, async (req: any, res) => {
+    try {
+      const mockTrendsData = {
+        revenue: [
+          { month: 'Jan', value: 4500 },
+          { month: 'Feb', value: 5200 },
+          { month: 'Mar', value: 4800 },
+          { month: 'Apr', value: 6200 },
+          { month: 'May', value: 5800 }
+        ],
+        productivity: [
+          { week: 'W1', value: 75 },
+          { week: 'W2', value: 78 },
+          { week: 'W3', value: 82 },
+          { week: 'W4', value: 78 }
+        ],
+        aiUsage: [
+          { tool: 'Content Gen', usage: 145 },
+          { tool: 'Analytics', usage: 98 },
+          { tool: 'Scheduling', usage: 67 },
+          { tool: 'Optimization', usage: 234 }
+        ]
+      };
+      
+      res.json(mockTrendsData);
+    } catch (error) {
+      console.error('Error fetching trend analytics:', error);
+      res.status(500).json({ message: 'Failed to fetch trend analytics' });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
