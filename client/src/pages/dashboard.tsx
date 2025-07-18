@@ -6,6 +6,7 @@ import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DollarSign, Folder, Bot, Clock, ArrowUpRight, Copy, Play, Calendar, FileText } from "lucide-react";
 import { DashboardStats, ProjectWithClient, AIToolUsage } from "@/lib/types";
+import { KPIDashboard } from "@/components/dashboard/kpi-dashboard";
 
 // Mock data for demonstration
 const mockProjects: ProjectWithClient[] = [
@@ -186,243 +187,128 @@ export default function Dashboard() {
 
   return (
     <div className="fade-in">
-      {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <Card className="card-hover">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Monthly Revenue</p>
-                {statsLoading ? (
-                  <Skeleton className="h-8 w-24 mt-2" />
-                ) : (
-                  <p className="text-2xl font-bold">{formatCurrency(stats?.monthlyRevenue || 12450)}</p>
-                )}
-                <p className="text-sm text-accent font-medium">+23% from last month</p>
-              </div>
-              <div className="w-12 h-12 bg-accent/10 rounded-lg flex items-center justify-center">
-                <DollarSign className="w-6 h-6 text-accent" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="card-hover">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Active Projects</p>
-                {statsLoading ? (
-                  <Skeleton className="h-8 w-8 mt-2" />
-                ) : (
-                  <p className="text-2xl font-bold">{stats?.activeProjects || 7}</p>
-                )}
-                <p className="text-sm text-primary font-medium">3 due this week</p>
-              </div>
-              <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
-                <Folder className="w-6 h-6 text-primary" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="card-hover">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">AI Tools Cost</p>
-                {statsLoading ? (
-                  <Skeleton className="h-8 w-20 mt-2" />
-                ) : (
-                  <p className="text-2xl font-bold">{formatCurrency(stats?.aiToolsCost || 287)}</p>
-                )}
-                <p className="text-sm text-warning font-medium">12% over budget</p>
-              </div>
-              <div className="w-12 h-12 bg-warning/10 rounded-lg flex items-center justify-center">
-                <Bot className="w-6 h-6 text-warning" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="card-hover">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Hours Saved</p>
-                {statsLoading ? (
-                  <Skeleton className="h-8 w-12 mt-2" />
-                ) : (
-                  <p className="text-2xl font-bold">{stats?.hoursSaved || 47}</p>
-                )}
-                <p className="text-sm text-secondary font-medium">This month</p>
-              </div>
-              <div className="w-12 h-12 bg-secondary/10 rounded-lg flex items-center justify-center">
-                <Clock className="w-6 h-6 text-secondary" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Main Dashboard Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Project Overview */}
-        <div className="lg:col-span-2">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle>Active Projects</CardTitle>
-                <Button variant="ghost" size="sm">
-                  View All <ArrowUpRight className="w-4 h-4 ml-1" />
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {mockProjects.map((project) => (
-                  <div key={project.id} className="flex items-center justify-between p-4 bg-muted rounded-lg">
-                    <div className="flex items-center space-x-3">
-                      <div className={`w-10 h-10 ${getClientColor(project.client?.name || '')} rounded-lg flex items-center justify-center`}>
-                        <span className="text-white text-sm font-medium">{project.client?.avatar}</span>
-                      </div>
-                      <div>
-                        <h3 className="font-medium">{project.name}</h3>
-                        <p className="text-sm text-muted-foreground">
-                          {project.client?.name} • Due {new Date(project.dueDate || '').toLocaleDateString()}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-3">
-                      <div className="w-20">
-                        <Progress value={project.progress} className="h-2" />
-                      </div>
-                      <span className="text-sm text-muted-foreground">{project.progress}%</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Sidebar Content */}
+      {/* Animated KPI Dashboard */}
+      {statsLoading ? (
         <div className="space-y-6">
-          {/* AI Tools Usage */}
-          <Card>
-            <CardHeader>
-              <CardTitle>AI Tools Usage</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {mockAITools.map((tool) => (
-                  <div key={tool.id} className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                        <Bot className="w-4 h-4 text-primary" />
-                      </div>
-                      <div>
-                        <p className="font-medium">{tool.name}</p>
-                        <p className="text-sm text-muted-foreground">{formatCurrency(tool.currentSpend)}</p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm font-medium">{tool.tokensUsed.toLocaleString()} tokens</p>
-                      <p className="text-xs text-muted-foreground">This month</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Recent Activities */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Recent Activities</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {mockActivities.map((activity) => (
-                  <div key={activity.id} className="flex items-start space-x-3">
-                    <div className="w-2 h-2 bg-accent rounded-full mt-2"></div>
-                    <div>
-                      <p className="text-sm font-medium">{activity.message}</p>
-                      <p className="text-xs text-muted-foreground">{activity.description}</p>
-                      <p className="text-xs text-muted-foreground">{activity.timestamp}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Card key={i} className="card-hover">
+                <CardContent className="p-6">
+                  <Skeleton className="h-4 w-24 mb-2" />
+                  <Skeleton className="h-8 w-16 mb-2" />
+                  <Skeleton className="h-3 w-20" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card className="card-hover">
+              <CardContent className="p-6">
+                <Skeleton className="h-6 w-32 mb-4" />
+                <Skeleton className="h-64 w-full" />
+              </CardContent>
+            </Card>
+            <Card className="card-hover">
+              <CardContent className="p-6">
+                <Skeleton className="h-6 w-32 mb-4" />
+                <Skeleton className="h-64 w-full" />
+              </CardContent>
+            </Card>
+          </div>
         </div>
-      </div>
+      ) : (
+        <KPIDashboard 
+          data={{
+            monthlyRevenue: stats?.monthlyRevenue || 127500,
+            activeProjects: stats?.activeProjects || 14,
+            aiToolsCost: stats?.aiToolsCost || 847,
+            hoursSaved: stats?.hoursSaved || 124,
+            clientCount: 8,
+            profitMargin: 68,
+            growthRate: 23
+          }}
+        />
+      )}
 
-      {/* Bottom Grid */}
+      {/* Quick Access Projects */}
       <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Top Performing Prompts */}
-        <Card>
+        <Card className="card-hover">
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle>Top Performing Prompts</CardTitle>
-              <Button variant="ghost" size="sm">
-                View Library <ArrowUpRight className="w-4 h-4 ml-1" />
-              </Button>
-            </div>
+            <CardTitle className="flex items-center justify-between">
+              <span>Active Projects</span>
+              <Badge variant="secondary">{mockProjects.length}</Badge>
+            </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {mockPrompts.map((prompt) => (
-                <div key={prompt.id} className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                  <div>
-                    <p className="font-medium">{prompt.name}</p>
-                    <p className="text-sm text-muted-foreground">Used {prompt.usageCount} times this month</p>
+          <CardContent className="space-y-4">
+            {mockProjects.map((project) => (
+              <div key={project.id} className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800 rounded-lg">
+                <div className="flex items-center space-x-3">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-medium ${getClientColor(project.client.name)}`}>
+                    {project.client.avatar}
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <span className="text-sm text-accent font-medium">{prompt.successRate}% success</span>
-                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                      <Copy className="w-4 h-4" />
-                    </Button>
+                  <div>
+                    <h4 className="font-medium">{project.name}</h4>
+                    <p className="text-sm text-muted-foreground">{project.client.name}</p>
                   </div>
                 </div>
-              ))}
-            </div>
+                <div className="text-right">
+                  <p className="text-sm font-medium">{project.progress}%</p>
+                  <Progress value={project.progress} className="w-16 h-2" />
+                </div>
+              </div>
+            ))}
           </CardContent>
         </Card>
 
-        {/* Active Automations */}
-        <Card>
+        <Card className="card-hover">
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle>Active Automations</CardTitle>
-              <Button variant="ghost" size="sm">
-                Create New <ArrowUpRight className="w-4 h-4 ml-1" />
-              </Button>
-            </div>
+            <CardTitle className="flex items-center justify-between">
+              <span>AI Tools Performance</span>
+              <Badge variant="secondary">{mockAITools.length}</Badge>
+            </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {mockAutomations.map((automation) => (
-                <div key={automation.id} className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-accent/10 rounded-full flex items-center justify-center">
-                      <automation.icon className="w-4 h-4 text-accent" />
-                    </div>
-                    <div>
-                      <p className="font-medium">{automation.name}</p>
-                      <p className="text-sm text-muted-foreground">{automation.description}</p>
-                    </div>
+          <CardContent className="space-y-4">
+            {mockAITools.map((tool) => (
+              <div key={tool.id} className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800 rounded-lg">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                    <Bot className="w-4 h-4 text-primary" />
                   </div>
-                  <Badge variant="secondary" className="bg-accent text-accent-foreground">
-                    Active
-                  </Badge>
+                  <div>
+                    <h4 className="font-medium">{tool.name}</h4>
+                    <p className="text-sm text-muted-foreground">{tool.provider}</p>
+                  </div>
                 </div>
-              ))}
-            </div>
+                <div className="text-right">
+                  <p className="text-sm font-medium">${tool.currentSpend.toFixed(2)}</p>
+                  <p className="text-xs text-muted-foreground">{tool.requestsCount} requests</p>
+                </div>
+              </div>
+            ))}
           </CardContent>
         </Card>
       </div>
+
+      {/* Recent Activity */}
+      <Card className="card-hover mt-8">
+        <CardHeader>
+          <CardTitle>Recent Activity</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {mockActivities.map((activity) => (
+              <div key={activity.id} className="flex items-center space-x-3 p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">
+                <span className="text-lg">{getActivityIcon(activity.category)}</span>
+                <div className="flex-1">
+                  <p className="font-medium">{activity.message}</p>
+                  <p className="text-sm text-muted-foreground">{activity.description}</p>
+                </div>
+                <span className="text-xs text-muted-foreground">{activity.timestamp}</span>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
