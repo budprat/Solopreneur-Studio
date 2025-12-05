@@ -1,14 +1,17 @@
 import { useState } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { Calendar, Clock, Zap, Shield, Target, Brain, Plus, Settings } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Calendar, Clock, Zap, Shield, Target, Brain, Plus, Settings, Pencil, Trash2, MoreHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { apiRequest, queryClient as qc } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { TaskModal } from "@/components/modals/task-modal";
+import { Task as DbTask } from "@shared/schema";
 
 interface Task {
   id: number;
@@ -44,12 +47,50 @@ interface ScheduleBlock {
 export default function IntelligentScheduling() {
   const [activeTab, setActiveTab] = useState('schedule');
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [taskModalOpen, setTaskModalOpen] = useState(false);
+  const [selectedTask, setSelectedTask] = useState<DbTask | null>(null);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: tasks = [] } = useQuery({
     queryKey: ["/api/tasks"],
     select: (data) => data as Task[],
   });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => apiRequest('DELETE', `/api/tasks/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/schedule'] });
+      toast({
+        title: "Task deleted",
+        description: "The task has been deleted successfully.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to delete task. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleCreateTask = () => {
+    setSelectedTask(null);
+    setTaskModalOpen(true);
+  };
+
+  const handleEditTask = (task: Task) => {
+    setSelectedTask(task as unknown as DbTask);
+    setTaskModalOpen(true);
+  };
+
+  const handleDeleteTask = (task: Task) => {
+    if (confirm(`Are you sure you want to delete "${task.title}"?`)) {
+      deleteMutation.mutate(task.id);
+    }
+  };
 
   const { data: energyPatterns = [] } = useQuery({
     queryKey: ["/api/energy-patterns"],
@@ -191,7 +232,7 @@ export default function IntelligentScheduling() {
             <Brain className="w-4 h-4 mr-2" />
             Optimize Schedule
           </Button>
-          <Button size="sm">
+          <Button size="sm" onClick={handleCreateTask}>
             <Plus className="w-4 h-4 mr-2" />
             Add Task
           </Button>
@@ -417,9 +458,26 @@ export default function IntelligentScheduling() {
                     </div>
                     <div className="flex items-center space-x-2">
                       <Badge variant="outline">{task.priority}</Badge>
-                      <Button size="sm" variant="outline">
-                        Schedule
-                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button size="sm" variant="outline">
+                            <MoreHorizontal className="w-4 h-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => handleEditTask(task)}>
+                            <Pencil className="w-4 h-4 mr-2" />
+                            Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handleDeleteTask(task)}
+                            className="text-destructive"
+                          >
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   </div>
                 ))}
@@ -484,6 +542,13 @@ export default function IntelligentScheduling() {
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Task Modal */}
+      <TaskModal
+        open={taskModalOpen}
+        onOpenChange={setTaskModalOpen}
+        task={selectedTask}
+      />
     </div>
   );
 }

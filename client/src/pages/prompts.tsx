@@ -1,21 +1,71 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { Plus, Search, Copy, Edit, Star, TrendingUp, Code, MoreHorizontal } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Plus, Search, Copy, Star, TrendingUp, Code, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { Prompt } from "@shared/schema";
+import { PromptModal } from "@/components/modals/prompt-modal";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 
 export default function Prompts() {
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedPrompt, setSelectedPrompt] = useState<Prompt | null>(null);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: prompts, isLoading } = useQuery<Prompt[]>({
     queryKey: ['/api/prompts'],
   });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => apiRequest('DELETE', `/api/prompts/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/prompts'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });
+      toast({
+        title: "Prompt deleted",
+        description: "The prompt has been deleted successfully.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to delete prompt. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleEdit = (prompt: Prompt) => {
+    setSelectedPrompt(prompt);
+    setModalOpen(true);
+  };
+
+  const handleDelete = (prompt: Prompt) => {
+    if (confirm(`Are you sure you want to delete "${prompt.name}"?`)) {
+      deleteMutation.mutate(prompt.id);
+    }
+  };
+
+  const handleCreate = () => {
+    setSelectedPrompt(null);
+    setModalOpen(true);
+  };
+
+  const handleCopy = (prompt: Prompt) => {
+    navigator.clipboard.writeText(prompt.content);
+    toast({
+      title: "Copied to clipboard",
+      description: "The prompt has been copied to your clipboard.",
+    });
+  };
 
   const filteredPrompts = prompts?.filter(prompt => {
     const matchesSearch = prompt.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -64,7 +114,7 @@ export default function Prompts() {
           <h1 className="text-2xl font-bold">Prompt Library</h1>
           <p className="text-muted-foreground">Create, organize, and optimize your AI prompts</p>
         </div>
-        <Button className="gradient-bg">
+        <Button className="gradient-bg" onClick={handleCreate}>
           <Plus className="w-4 h-4 mr-2" />
           New Prompt
         </Button>
@@ -175,9 +225,30 @@ export default function Prompts() {
                     {prompt.description || 'No description'}
                   </p>
                 </div>
-                <Button variant="ghost" size="icon" className="h-8 w-8">
-                  <MoreHorizontal className="w-4 h-4" />
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                      <MoreHorizontal className="w-4 h-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => handleCopy(prompt)}>
+                      <Copy className="w-4 h-4 mr-2" />
+                      Copy
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleEdit(prompt)}>
+                      <Pencil className="w-4 h-4 mr-2" />
+                      Edit
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => handleDelete(prompt)}
+                      className="text-destructive"
+                    >
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Delete
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -230,12 +301,12 @@ export default function Prompts() {
 
               {/* Actions */}
               <div className="flex gap-2 pt-2">
-                <Button variant="outline" size="sm" className="flex-1">
+                <Button variant="outline" size="sm" className="flex-1" onClick={() => handleCopy(prompt)}>
                   <Copy className="w-4 h-4 mr-2" />
                   Copy
                 </Button>
-                <Button variant="outline" size="sm" className="flex-1">
-                  <Edit className="w-4 h-4 mr-2" />
+                <Button variant="outline" size="sm" className="flex-1" onClick={() => handleEdit(prompt)}>
+                  <Pencil className="w-4 h-4 mr-2" />
                   Edit
                 </Button>
               </div>
@@ -252,17 +323,24 @@ export default function Prompts() {
           </div>
           <h3 className="text-lg font-semibold mb-2">No prompts found</h3>
           <p className="text-muted-foreground mb-4">
-            {searchTerm || categoryFilter !== "all" 
+            {searchTerm || categoryFilter !== "all"
               ? "Try adjusting your filters or search terms"
               : "Get started by creating your first prompt"
             }
           </p>
-          <Button className="gradient-bg">
+          <Button className="gradient-bg" onClick={handleCreate}>
             <Plus className="w-4 h-4 mr-2" />
             Create Prompt
           </Button>
         </div>
       )}
+
+      {/* Prompt Modal */}
+      <PromptModal
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+        prompt={selectedPrompt}
+      />
     </div>
   );
 }

@@ -1,21 +1,71 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { Plus, Search, BookOpen, FileText, Link, LayoutTemplate, MoreHorizontal, Edit, Share, Archive } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Plus, Search, BookOpen, FileText, Link, LayoutTemplate, MoreHorizontal, Pencil, Trash2, Copy } from "lucide-react";
 import { KnowledgeBase } from "@shared/schema";
+import { KnowledgeModal } from "@/components/modals/knowledge-modal";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 
 export default function Knowledge() {
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<KnowledgeBase | null>(null);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: knowledgeItems, isLoading } = useQuery<KnowledgeBase[]>({
     queryKey: ['/api/knowledge'],
   });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => apiRequest('DELETE', `/api/knowledge/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/knowledge'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });
+      toast({
+        title: "Knowledge item deleted",
+        description: "The item has been deleted successfully.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to delete item. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleEdit = (item: KnowledgeBase) => {
+    setSelectedItem(item);
+    setModalOpen(true);
+  };
+
+  const handleDelete = (item: KnowledgeBase) => {
+    if (confirm(`Are you sure you want to delete "${item.title}"?`)) {
+      deleteMutation.mutate(item.id);
+    }
+  };
+
+  const handleCreate = () => {
+    setSelectedItem(null);
+    setModalOpen(true);
+  };
+
+  const handleCopy = (item: KnowledgeBase) => {
+    navigator.clipboard.writeText(item.content);
+    toast({
+      title: "Copied to clipboard",
+      description: "The content has been copied to your clipboard.",
+    });
+  };
 
   const filteredItems = knowledgeItems?.filter(item => {
     const matchesSearch = item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -75,7 +125,7 @@ export default function Knowledge() {
           <h1 className="text-2xl font-bold">Knowledge Base</h1>
           <p className="text-muted-foreground">Organize your insights, resources, and expertise</p>
         </div>
-        <Button className="gradient-bg">
+        <Button className="gradient-bg" onClick={handleCreate}>
           <Plus className="w-4 h-4 mr-2" />
           Add Knowledge
         </Button>
@@ -184,9 +234,30 @@ export default function Knowledge() {
                       </Badge>
                     </div>
                   </div>
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
-                    <MoreHorizontal className="w-4 h-4" />
-                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <MoreHorizontal className="w-4 h-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => handleCopy(item)}>
+                        <Copy className="w-4 h-4 mr-2" />
+                        Copy Content
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleEdit(item)}>
+                        <Pencil className="w-4 h-4 mr-2" />
+                        Edit
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => handleDelete(item)}
+                        className="text-destructive"
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -226,13 +297,13 @@ export default function Knowledge() {
 
                 {/* Actions */}
                 <div className="flex gap-2 pt-2">
-                  <Button variant="outline" size="sm" className="flex-1">
-                    <Edit className="w-4 h-4 mr-2" />
+                  <Button variant="outline" size="sm" className="flex-1" onClick={() => handleEdit(item)}>
+                    <Pencil className="w-4 h-4 mr-2" />
                     Edit
                   </Button>
-                  <Button variant="outline" size="sm" className="flex-1">
-                    <Share className="w-4 h-4 mr-2" />
-                    Share
+                  <Button variant="outline" size="sm" className="flex-1" onClick={() => handleCopy(item)}>
+                    <Copy className="w-4 h-4 mr-2" />
+                    Copy
                   </Button>
                 </div>
               </CardContent>
@@ -249,17 +320,24 @@ export default function Knowledge() {
           </div>
           <h3 className="text-lg font-semibold mb-2">No knowledge items found</h3>
           <p className="text-muted-foreground mb-4">
-            {searchTerm || typeFilter !== "all" 
+            {searchTerm || typeFilter !== "all"
               ? "Try adjusting your filters or search terms"
               : "Get started by adding your first knowledge item"
             }
           </p>
-          <Button className="gradient-bg">
+          <Button className="gradient-bg" onClick={handleCreate}>
             <Plus className="w-4 h-4 mr-2" />
             Add Knowledge
           </Button>
         </div>
       )}
+
+      {/* Knowledge Modal */}
+      <KnowledgeModal
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+        knowledge={selectedItem}
+      />
     </div>
   );
 }

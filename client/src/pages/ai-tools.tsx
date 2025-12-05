@@ -1,21 +1,86 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Search, DollarSign, Activity, Settings, Brain, Zap } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Plus, Search, DollarSign, Activity, Brain, Zap, MoreHorizontal, Pencil, Trash2, Power, PowerOff } from "lucide-react";
 import { AiTool } from "@shared/schema";
+import { AiToolModal } from "@/components/modals/ai-tool-modal";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 
 export default function AITools() {
   const [searchTerm, setSearchTerm] = useState("");
   const [providerFilter, setProviderFilter] = useState("all");
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedTool, setSelectedTool] = useState<AiTool | null>(null);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: aiTools, isLoading } = useQuery<AiTool[]>({
     queryKey: ['/api/ai-tools'],
   });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => apiRequest('DELETE', `/api/ai-tools/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/ai-tools'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });
+      toast({
+        title: "AI Tool deleted",
+        description: "The AI tool has been deleted successfully.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to delete AI tool. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const toggleActiveMutation = useMutation({
+    mutationFn: (tool: AiTool) => apiRequest('PUT', `/api/ai-tools/${tool.id}`, { isActive: !tool.isActive }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/ai-tools'] });
+      toast({
+        title: "AI Tool updated",
+        description: "The AI tool status has been updated.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update AI tool. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleEdit = (tool: AiTool) => {
+    setSelectedTool(tool);
+    setModalOpen(true);
+  };
+
+  const handleDelete = (tool: AiTool) => {
+    if (confirm(`Are you sure you want to delete "${tool.name}"?`)) {
+      deleteMutation.mutate(tool.id);
+    }
+  };
+
+  const handleCreate = () => {
+    setSelectedTool(null);
+    setModalOpen(true);
+  };
+
+  const handleToggleActive = (tool: AiTool) => {
+    toggleActiveMutation.mutate(tool);
+  };
 
   const filteredTools = aiTools?.filter(tool => {
     const matchesSearch = tool.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -75,7 +140,7 @@ export default function AITools() {
           <h1 className="text-2xl font-bold">AI Tools Hub</h1>
           <p className="text-muted-foreground">Manage your AI tools and monitor usage</p>
         </div>
-        <Button className="gradient-bg">
+        <Button className="gradient-bg" onClick={handleCreate}>
           <Plus className="w-4 h-4 mr-2" />
           Add Tool
         </Button>
@@ -178,9 +243,39 @@ export default function AITools() {
                 </div>
                 <div className="flex items-center gap-2">
                   <div className={`w-2 h-2 rounded-full ${tool.isActive ? 'bg-green-500' : 'bg-gray-400'}`} />
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
-                    <Settings className="w-4 h-4" />
-                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <MoreHorizontal className="w-4 h-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => handleEdit(tool)}>
+                        <Pencil className="w-4 h-4 mr-2" />
+                        Edit
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleToggleActive(tool)}>
+                        {tool.isActive ? (
+                          <>
+                            <PowerOff className="w-4 h-4 mr-2" />
+                            Deactivate
+                          </>
+                        ) : (
+                          <>
+                            <Power className="w-4 h-4 mr-2" />
+                            Activate
+                          </>
+                        )}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => handleDelete(tool)}
+                        className="text-destructive"
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </div>
             </CardHeader>
@@ -219,11 +314,27 @@ export default function AITools() {
 
               {/* Actions */}
               <div className="flex gap-2 pt-2">
-                <Button variant="outline" size="sm" className="flex-1">
-                  View Usage
+                <Button variant="outline" size="sm" className="flex-1" onClick={() => handleEdit(tool)}>
+                  <Pencil className="w-3 h-3 mr-1" />
+                  Edit
                 </Button>
-                <Button variant="outline" size="sm" className="flex-1">
-                  Configure
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1"
+                  onClick={() => handleToggleActive(tool)}
+                >
+                  {tool.isActive ? (
+                    <>
+                      <PowerOff className="w-3 h-3 mr-1" />
+                      Deactivate
+                    </>
+                  ) : (
+                    <>
+                      <Power className="w-3 h-3 mr-1" />
+                      Activate
+                    </>
+                  )}
                 </Button>
               </div>
             </CardContent>
@@ -239,17 +350,24 @@ export default function AITools() {
           </div>
           <h3 className="text-lg font-semibold mb-2">No AI tools found</h3>
           <p className="text-muted-foreground mb-4">
-            {searchTerm || providerFilter !== "all" 
+            {searchTerm || providerFilter !== "all"
               ? "Try adjusting your filters or search terms"
               : "Get started by adding your first AI tool"
             }
           </p>
-          <Button className="gradient-bg">
+          <Button className="gradient-bg" onClick={handleCreate}>
             <Plus className="w-4 h-4 mr-2" />
             Add AI Tool
           </Button>
         </div>
       )}
+
+      {/* AI Tool Modal */}
+      <AiToolModal
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+        aiTool={selectedTool}
+      />
     </div>
   );
 }
