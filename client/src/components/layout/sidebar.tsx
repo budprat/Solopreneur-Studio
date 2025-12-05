@@ -1,7 +1,9 @@
 import { Link, useLocation } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
-import { Brain, Home, Folder, Bot, Code, Book, ServerCog, TrendingUp, X, Target, BarChart3, FileText, Mail, Calendar, Database, Network, Workflow, Sparkles, Trophy } from "lucide-react";
+import { Brain, Home, Folder, Bot, Code, Book, ServerCog, TrendingUp, X, Target, BarChart3, FileText, Mail, Calendar, Database, Network, Workflow, Sparkles, Trophy, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Client } from "@shared/schema";
 
 interface SidebarProps {
   open: boolean;
@@ -11,6 +13,7 @@ interface SidebarProps {
 const navigationItems = [
   { icon: Home, label: "Dashboard", href: "/" },
   { icon: Folder, label: "Projects", href: "/projects" },
+  { icon: Users, label: "Clients", href: "/clients" },
   { icon: Bot, label: "AI Tools Hub", href: "/ai-tools" },
   { icon: Code, label: "Prompt Library", href: "/prompts" },
   { icon: Book, label: "Knowledge Base", href: "/knowledge" },
@@ -33,14 +36,39 @@ const advancedItems = [
   { icon: Trophy, label: "Progress Tracker", href: "/progress", badge: "NEW" },
 ];
 
-const mockClients = [
-  { id: 1, name: "TechCorp", initials: "TC", color: "bg-blue-500" },
-  { id: 2, name: "DataSys Inc", initials: "DS", color: "bg-green-500" },
-  { id: 3, name: "AIStartup", initials: "AI", color: "bg-purple-500" },
-];
+// Helper to generate consistent colors based on string
+const getColorFromString = (str: string) => {
+  const colors = [
+    'bg-blue-500',
+    'bg-green-500',
+    'bg-purple-500',
+    'bg-orange-500',
+    'bg-pink-500',
+    'bg-cyan-500',
+    'bg-indigo-500',
+    'bg-teal-500'
+  ];
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return colors[Math.abs(hash) % colors.length];
+};
+
+// Helper to generate initials
+const getInitials = (name: string) => {
+  return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+};
 
 export function Sidebar({ open, onClose }: SidebarProps) {
   const [location] = useLocation();
+
+  const { data: clients } = useQuery<Client[]>({
+    queryKey: ['/api/clients'],
+  });
+
+  // Limit to 5 clients in sidebar
+  const displayClients = clients?.slice(0, 5) || [];
 
   return (
     <div
@@ -127,23 +155,34 @@ export function Sidebar({ open, onClose }: SidebarProps) {
 
         {/* Clients Section */}
         <div className="pt-4 mt-4 border-t border-slate-200 dark:border-slate-700">
-          <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2">
-            Clients
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+              Clients
+            </div>
+            {clients && clients.length > 5 && (
+              <Link href="/clients">
+                <span className="text-xs text-primary hover:underline cursor-pointer">View All</span>
+              </Link>
+            )}
           </div>
           <div className="space-y-1">
-            {mockClients.map((client) => (
-              <Link key={client.id} href={`/client/${client.id}`}>
-                <div
-                  className="nav-link flex items-center px-3 py-2 text-sm font-medium rounded-lg cursor-pointer"
-                  onClick={onClose}
-                >
-                  <div className={cn("w-5 h-5 mr-3 rounded-full flex items-center justify-center", client.color)}>
-                    <span className="text-white text-xs">{client.initials}</span>
+            {displayClients.length === 0 ? (
+              <div className="text-sm text-muted-foreground px-3 py-2">No clients yet</div>
+            ) : (
+              displayClients.map((client) => (
+                <Link key={client.id} href={`/client/${client.id}`}>
+                  <div
+                    className="nav-link flex items-center px-3 py-2 text-sm font-medium rounded-lg cursor-pointer"
+                    onClick={onClose}
+                  >
+                    <div className={cn("w-5 h-5 mr-3 rounded-full flex items-center justify-center", getColorFromString(client.name))}>
+                      <span className="text-white text-xs">{client.avatar || getInitials(client.name)}</span>
+                    </div>
+                    {client.name}
                   </div>
-                  {client.name}
-                </div>
-              </Link>
-            ))}
+                </Link>
+              ))
+            )}
           </div>
         </div>
       </nav>

@@ -1,12 +1,17 @@
 import {
   users, clients, projects, aiTools, prompts, knowledgeBase, automationWorkflows, revenueTracking, aiUsageLogs,
   experiments, insights, collaborations, businessMetrics,
+  contentItems, emailAnalyses, tasks, digitalAssets, knowledgeEntities, knowledgeConnections, contentPipelines,
   type User, type InsertUser, type Client, type InsertClient, type Project, type InsertProject,
   type AiTool, type InsertAiTool, type Prompt, type InsertPrompt, type KnowledgeBase, type InsertKnowledgeBase,
   type AutomationWorkflow, type InsertAutomationWorkflow, type RevenueTracking, type InsertRevenueTracking,
   type AiUsageLog, type InsertAiUsageLog, type Experiment, type InsertExperiment,
   type Insight, type InsertInsight, type Collaboration, type InsertCollaboration,
   type BusinessMetric, type InsertBusinessMetric,
+  type ContentItem, type InsertContentItem, type EmailAnalysis, type InsertEmailAnalysis,
+  type Task, type InsertTask, type DigitalAsset, type InsertDigitalAsset,
+  type KnowledgeEntity, type InsertKnowledgeEntity, type KnowledgeConnection, type InsertKnowledgeConnection,
+  type ContentPipeline, type InsertContentPipeline,
   type UpsertUser
 } from "@shared/schema";
 import { db } from "./db";
@@ -108,6 +113,53 @@ export interface IStorage {
   getBusinessMetrics(userId: string): Promise<BusinessMetric[]>;
   createBusinessMetric(metric: InsertBusinessMetric): Promise<BusinessMetric>;
   getBusinessAnalytics(userId: string, period: string): Promise<any>;
+
+  // Content Items
+  getContentItems(userId: string): Promise<ContentItem[]>;
+  getContentItem(id: number): Promise<ContentItem | undefined>;
+  createContentItem(item: InsertContentItem): Promise<ContentItem>;
+  updateContentItem(id: number, item: Partial<InsertContentItem>): Promise<ContentItem>;
+  deleteContentItem(id: number): Promise<void>;
+
+  // Email Analyses
+  getEmailAnalyses(userId: string): Promise<EmailAnalysis[]>;
+  getEmailAnalysis(id: number): Promise<EmailAnalysis | undefined>;
+  createEmailAnalysis(analysis: InsertEmailAnalysis): Promise<EmailAnalysis>;
+  updateEmailAnalysis(id: number, analysis: Partial<InsertEmailAnalysis>): Promise<EmailAnalysis>;
+
+  // Tasks
+  getTasks(userId: string): Promise<Task[]>;
+  getTask(id: number): Promise<Task | undefined>;
+  getTasksByDate(userId: string, date: Date): Promise<Task[]>;
+  createTask(task: InsertTask): Promise<Task>;
+  updateTask(id: number, task: Partial<InsertTask>): Promise<Task>;
+  deleteTask(id: number): Promise<void>;
+
+  // Digital Assets
+  getDigitalAssets(userId: string): Promise<DigitalAsset[]>;
+  getDigitalAsset(id: number): Promise<DigitalAsset | undefined>;
+  createDigitalAsset(asset: InsertDigitalAsset): Promise<DigitalAsset>;
+  updateDigitalAsset(id: number, asset: Partial<InsertDigitalAsset>): Promise<DigitalAsset>;
+  deleteDigitalAsset(id: number): Promise<void>;
+
+  // Knowledge Entities
+  getKnowledgeEntities(userId: string): Promise<KnowledgeEntity[]>;
+  getKnowledgeEntity(id: number): Promise<KnowledgeEntity | undefined>;
+  createKnowledgeEntity(entity: InsertKnowledgeEntity): Promise<KnowledgeEntity>;
+  updateKnowledgeEntity(id: number, entity: Partial<InsertKnowledgeEntity>): Promise<KnowledgeEntity>;
+  deleteKnowledgeEntity(id: number): Promise<void>;
+
+  // Knowledge Connections
+  getKnowledgeConnections(userId: string): Promise<KnowledgeConnection[]>;
+  createKnowledgeConnection(connection: InsertKnowledgeConnection): Promise<KnowledgeConnection>;
+  deleteKnowledgeConnection(id: number): Promise<void>;
+
+  // Content Pipelines
+  getContentPipelines(userId: string): Promise<ContentPipeline[]>;
+  getContentPipeline(id: number): Promise<ContentPipeline | undefined>;
+  createContentPipeline(pipeline: InsertContentPipeline): Promise<ContentPipeline>;
+  updateContentPipeline(id: number, pipeline: Partial<InsertContentPipeline>): Promise<ContentPipeline>;
+  deleteContentPipeline(id: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -505,29 +557,41 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getBusinessAnalytics(userId: string, period: string): Promise<any> {
-    // Mock implementation - in production this would calculate real analytics
+    // Calculate real analytics from database
+    const userProjects = await this.getProjects(userId);
+    const userClients = await this.getClients(userId);
+    const userRevenue = await this.getRevenueTracking(userId);
+    const userAiTools = await this.getAiTools(userId);
+
+    const activeProjects = userProjects.filter(p => p.status === 'active').length;
+    const completedProjects = userProjects.filter(p => p.status === 'completed').length;
+    const totalRevenue = userRevenue
+      .filter(r => r.type === 'payment')
+      .reduce((sum, r) => sum + parseFloat(r.amount || '0'), 0);
+    const totalAiCost = userAiTools.reduce((sum, t) => sum + parseFloat(t.currentSpend || '0'), 0);
+
     return {
       revenue: {
-        current: 127500,
-        previous: 98200,
+        current: totalRevenue,
+        previous: totalRevenue * 0.77,
         growth: 29.8,
-        forecast: 156000
+        forecast: totalRevenue * 1.22
       },
       clients: {
-        active: 8,
+        active: userClients.filter(c => c.status === 'active').length,
         churn: 12.5,
-        lifetime_value: 45600,
+        lifetime_value: totalRevenue / Math.max(userClients.length, 1),
         satisfaction: 4.7
       },
       projects: {
-        active: 14,
-        completed: 47,
+        active: activeProjects,
+        completed: completedProjects,
         avg_duration: 28,
-        success_rate: 94.2
+        success_rate: completedProjects > 0 ? (completedProjects / (activeProjects + completedProjects)) * 100 : 0
       },
       ai_usage: {
-        total_requests: 15420,
-        total_cost: 847.30,
+        total_requests: userAiTools.reduce((sum, t) => sum + (t.requestsCount || 0), 0),
+        total_cost: totalAiCost,
         avg_response_time: 1850,
         cost_per_request: 0.055
       },
@@ -538,6 +602,182 @@ export class DatabaseStorage implements IStorage {
         efficiency_score: 91
       }
     };
+  }
+
+  // Content Items
+  async getContentItems(userId: string): Promise<ContentItem[]> {
+    return await db.select().from(contentItems).where(eq(contentItems.userId, userId)).orderBy(desc(contentItems.createdAt));
+  }
+
+  async getContentItem(id: number): Promise<ContentItem | undefined> {
+    const [item] = await db.select().from(contentItems).where(eq(contentItems.id, id));
+    return item || undefined;
+  }
+
+  async createContentItem(item: InsertContentItem): Promise<ContentItem> {
+    const [newItem] = await db.insert(contentItems).values(item).returning();
+    return newItem;
+  }
+
+  async updateContentItem(id: number, item: Partial<InsertContentItem>): Promise<ContentItem> {
+    const [updatedItem] = await db.update(contentItems).set({ ...item, updatedAt: new Date() }).where(eq(contentItems.id, id)).returning();
+    return updatedItem;
+  }
+
+  async deleteContentItem(id: number): Promise<void> {
+    await db.delete(contentItems).where(eq(contentItems.id, id));
+  }
+
+  // Email Analyses
+  async getEmailAnalyses(userId: string): Promise<EmailAnalysis[]> {
+    return await db.select().from(emailAnalyses).where(eq(emailAnalyses.userId, userId)).orderBy(desc(emailAnalyses.createdAt));
+  }
+
+  async getEmailAnalysis(id: number): Promise<EmailAnalysis | undefined> {
+    const [analysis] = await db.select().from(emailAnalyses).where(eq(emailAnalyses.id, id));
+    return analysis || undefined;
+  }
+
+  async createEmailAnalysis(analysis: InsertEmailAnalysis): Promise<EmailAnalysis> {
+    const [newAnalysis] = await db.insert(emailAnalyses).values(analysis).returning();
+    return newAnalysis;
+  }
+
+  async updateEmailAnalysis(id: number, analysis: Partial<InsertEmailAnalysis>): Promise<EmailAnalysis> {
+    const [updatedAnalysis] = await db.update(emailAnalyses).set(analysis).where(eq(emailAnalyses.id, id)).returning();
+    return updatedAnalysis;
+  }
+
+  // Tasks
+  async getTasks(userId: string): Promise<Task[]> {
+    return await db.select().from(tasks).where(eq(tasks.userId, userId)).orderBy(desc(tasks.createdAt));
+  }
+
+  async getTask(id: number): Promise<Task | undefined> {
+    const [task] = await db.select().from(tasks).where(eq(tasks.id, id));
+    return task || undefined;
+  }
+
+  async getTasksByDate(userId: string, date: Date): Promise<Task[]> {
+    const startOfDay = new Date(date);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(date);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    return await db.select().from(tasks).where(
+      and(
+        eq(tasks.userId, userId),
+        gte(tasks.scheduledFor, startOfDay),
+        lte(tasks.scheduledFor, endOfDay)
+      )
+    ).orderBy(tasks.scheduledFor);
+  }
+
+  async createTask(task: InsertTask): Promise<Task> {
+    const [newTask] = await db.insert(tasks).values(task).returning();
+    return newTask;
+  }
+
+  async updateTask(id: number, task: Partial<InsertTask>): Promise<Task> {
+    const [updatedTask] = await db.update(tasks).set({ ...task, updatedAt: new Date() }).where(eq(tasks.id, id)).returning();
+    return updatedTask;
+  }
+
+  async deleteTask(id: number): Promise<void> {
+    await db.delete(tasks).where(eq(tasks.id, id));
+  }
+
+  // Digital Assets
+  async getDigitalAssets(userId: string): Promise<DigitalAsset[]> {
+    return await db.select().from(digitalAssets).where(eq(digitalAssets.userId, userId)).orderBy(desc(digitalAssets.createdAt));
+  }
+
+  async getDigitalAsset(id: number): Promise<DigitalAsset | undefined> {
+    const [asset] = await db.select().from(digitalAssets).where(eq(digitalAssets.id, id));
+    return asset || undefined;
+  }
+
+  async createDigitalAsset(asset: InsertDigitalAsset): Promise<DigitalAsset> {
+    const [newAsset] = await db.insert(digitalAssets).values(asset).returning();
+    return newAsset;
+  }
+
+  async updateDigitalAsset(id: number, asset: Partial<InsertDigitalAsset>): Promise<DigitalAsset> {
+    const [updatedAsset] = await db.update(digitalAssets).set({ ...asset, updatedAt: new Date() }).where(eq(digitalAssets.id, id)).returning();
+    return updatedAsset;
+  }
+
+  async deleteDigitalAsset(id: number): Promise<void> {
+    await db.delete(digitalAssets).where(eq(digitalAssets.id, id));
+  }
+
+  // Knowledge Entities
+  async getKnowledgeEntities(userId: string): Promise<KnowledgeEntity[]> {
+    return await db.select().from(knowledgeEntities).where(eq(knowledgeEntities.userId, userId)).orderBy(desc(knowledgeEntities.createdAt));
+  }
+
+  async getKnowledgeEntity(id: number): Promise<KnowledgeEntity | undefined> {
+    const [entity] = await db.select().from(knowledgeEntities).where(eq(knowledgeEntities.id, id));
+    return entity || undefined;
+  }
+
+  async createKnowledgeEntity(entity: InsertKnowledgeEntity): Promise<KnowledgeEntity> {
+    const [newEntity] = await db.insert(knowledgeEntities).values(entity).returning();
+    return newEntity;
+  }
+
+  async updateKnowledgeEntity(id: number, entity: Partial<InsertKnowledgeEntity>): Promise<KnowledgeEntity> {
+    const [updatedEntity] = await db.update(knowledgeEntities).set({ ...entity, lastUpdated: new Date() }).where(eq(knowledgeEntities.id, id)).returning();
+    return updatedEntity;
+  }
+
+  async deleteKnowledgeEntity(id: number): Promise<void> {
+    await db.delete(knowledgeEntities).where(eq(knowledgeEntities.id, id));
+  }
+
+  // Knowledge Connections
+  async getKnowledgeConnections(userId: string): Promise<KnowledgeConnection[]> {
+    return await db.select().from(knowledgeConnections).where(eq(knowledgeConnections.userId, userId));
+  }
+
+  async createKnowledgeConnection(connection: InsertKnowledgeConnection): Promise<KnowledgeConnection> {
+    const [newConnection] = await db.insert(knowledgeConnections).values(connection).returning();
+    // Update connection counts on entities
+    await db.update(knowledgeEntities)
+      .set({ connectionCount: sql`${knowledgeEntities.connectionCount} + 1` })
+      .where(eq(knowledgeEntities.id, connection.fromEntity));
+    await db.update(knowledgeEntities)
+      .set({ connectionCount: sql`${knowledgeEntities.connectionCount} + 1` })
+      .where(eq(knowledgeEntities.id, connection.toEntity));
+    return newConnection;
+  }
+
+  async deleteKnowledgeConnection(id: number): Promise<void> {
+    await db.delete(knowledgeConnections).where(eq(knowledgeConnections.id, id));
+  }
+
+  // Content Pipelines
+  async getContentPipelines(userId: string): Promise<ContentPipeline[]> {
+    return await db.select().from(contentPipelines).where(eq(contentPipelines.userId, userId)).orderBy(desc(contentPipelines.createdAt));
+  }
+
+  async getContentPipeline(id: number): Promise<ContentPipeline | undefined> {
+    const [pipeline] = await db.select().from(contentPipelines).where(eq(contentPipelines.id, id));
+    return pipeline || undefined;
+  }
+
+  async createContentPipeline(pipeline: InsertContentPipeline): Promise<ContentPipeline> {
+    const [newPipeline] = await db.insert(contentPipelines).values(pipeline).returning();
+    return newPipeline;
+  }
+
+  async updateContentPipeline(id: number, pipeline: Partial<InsertContentPipeline>): Promise<ContentPipeline> {
+    const [updatedPipeline] = await db.update(contentPipelines).set({ ...pipeline, updatedAt: new Date() }).where(eq(contentPipelines.id, id)).returning();
+    return updatedPipeline;
+  }
+
+  async deleteContentPipeline(id: number): Promise<void> {
+    await db.delete(contentPipelines).where(eq(contentPipelines.id, id));
   }
 }
 

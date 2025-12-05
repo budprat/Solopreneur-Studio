@@ -1,21 +1,64 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Search, Calendar, DollarSign, User, MoreHorizontal } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Plus, Search, Calendar, DollarSign, User, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { Project } from "@shared/schema";
+import { ProjectModal } from "@/components/modals/project-modal";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 
 export default function Projects() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: projects, isLoading } = useQuery<Project[]>({
     queryKey: ['/api/projects'],
   });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => apiRequest('DELETE', `/api/projects/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });
+      toast({
+        title: "Project deleted",
+        description: "The project has been deleted successfully.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to delete project. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleEdit = (project: Project) => {
+    setSelectedProject(project);
+    setModalOpen(true);
+  };
+
+  const handleDelete = (project: Project) => {
+    if (confirm(`Are you sure you want to delete "${project.name}"?`)) {
+      deleteMutation.mutate(project.id);
+    }
+  };
+
+  const handleCreate = () => {
+    setSelectedProject(null);
+    setModalOpen(true);
+  };
 
   const filteredProjects = projects?.filter(project => {
     const matchesSearch = project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -68,7 +111,7 @@ export default function Projects() {
           <h1 className="text-2xl font-bold">Projects</h1>
           <p className="text-muted-foreground">Manage your client projects and track progress</p>
         </div>
-        <Button className="gradient-bg">
+        <Button className="gradient-bg" onClick={handleCreate}>
           <Plus className="w-4 h-4 mr-2" />
           New Project
         </Button>
@@ -111,9 +154,26 @@ export default function Projects() {
                     {project.description || 'No description'}
                   </p>
                 </div>
-                <Button variant="ghost" size="icon" className="h-8 w-8">
-                  <MoreHorizontal className="w-4 h-4" />
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                      <MoreHorizontal className="w-4 h-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => handleEdit(project)}>
+                      <Pencil className="w-4 h-4 mr-2" />
+                      Edit
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => handleDelete(project)}
+                      className="text-destructive"
+                    >
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Delete
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -167,11 +227,13 @@ export default function Projects() {
 
               {/* Actions */}
               <div className="flex gap-2 pt-2">
-                <Button variant="outline" size="sm" className="flex-1">
-                  View Details
-                </Button>
-                <Button variant="outline" size="sm" className="flex-1">
+                <Button variant="outline" size="sm" className="flex-1" onClick={() => handleEdit(project)}>
+                  <Pencil className="w-3 h-3 mr-1" />
                   Edit
+                </Button>
+                <Button variant="outline" size="sm" className="flex-1 text-destructive hover:text-destructive" onClick={() => handleDelete(project)}>
+                  <Trash2 className="w-3 h-3 mr-1" />
+                  Delete
                 </Button>
               </div>
             </CardContent>
@@ -187,17 +249,24 @@ export default function Projects() {
           </div>
           <h3 className="text-lg font-semibold mb-2">No projects found</h3>
           <p className="text-muted-foreground mb-4">
-            {searchTerm || statusFilter !== "all" 
+            {searchTerm || statusFilter !== "all"
               ? "Try adjusting your filters or search terms"
               : "Get started by creating your first project"
             }
           </p>
-          <Button className="gradient-bg">
+          <Button className="gradient-bg" onClick={handleCreate}>
             <Plus className="w-4 h-4 mr-2" />
             Create Project
           </Button>
         </div>
       )}
+
+      {/* Project Modal */}
+      <ProjectModal
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+        project={selectedProject}
+      />
     </div>
   );
 }

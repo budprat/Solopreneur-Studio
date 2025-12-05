@@ -2,12 +2,13 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
-import { 
-  insertClientSchema, insertProjectSchema, insertAiToolSchema, insertPromptSchema, 
-  insertKnowledgeBaseSchema, insertAutomationWorkflowSchema, insertRevenueTrackingSchema, 
+import {
+  insertClientSchema, insertProjectSchema, insertAiToolSchema, insertPromptSchema,
+  insertKnowledgeBaseSchema, insertAutomationWorkflowSchema, insertRevenueTrackingSchema,
   insertExperimentSchema, insertInsightSchema, insertCollaborationSchema, insertBusinessMetricSchema,
   insertContentItemSchema, insertEmailAnalysisSchema, insertTaskSchema, insertDigitalAssetSchema,
-  insertKnowledgeEntitySchema, insertKnowledgeConnectionSchema, insertContentPipelineSchema
+  insertKnowledgeEntitySchema, insertKnowledgeConnectionSchema, insertContentPipelineSchema,
+  type Task
 } from "@shared/schema";
 import { z } from "zod";
 import { fromZodError } from "zod-validation-error";
@@ -104,16 +105,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Projects routes
-  app.get("/api/projects", async (req, res) => {
+  app.get("/api/projects", isAuthenticated, async (req: any, res) => {
     try {
-      const projects = await storage.getProjects(MOCK_USER_ID);
+      const userId = req.user.claims.sub;
+      const projects = await storage.getProjects(userId);
       res.json(projects);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch projects" });
     }
   });
 
-  app.get("/api/projects/:id", async (req, res) => {
+  app.get("/api/projects/:id", isAuthenticated, async (req: any, res) => {
     try {
       const project = await storage.getProject(parseInt(req.params.id));
       if (!project) {
@@ -125,11 +127,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/projects", async (req, res) => {
+  app.post("/api/projects", isAuthenticated, async (req: any, res) => {
     try {
+      const userId = req.user.claims.sub;
       const validatedData = insertProjectSchema.parse({
         ...req.body,
-        userId: MOCK_USER_ID
+        userId: userId
       });
       const project = await storage.createProject(validatedData);
       res.status(201).json(project);
@@ -142,7 +145,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/projects/:id", async (req, res) => {
+  app.put("/api/projects/:id", isAuthenticated, async (req: any, res) => {
     try {
       const validatedData = insertProjectSchema.partial().parse(req.body);
       const project = await storage.updateProject(parseInt(req.params.id), validatedData);
@@ -156,7 +159,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/projects/:id", async (req, res) => {
+  app.delete("/api/projects/:id", isAuthenticated, async (req: any, res) => {
     try {
       await storage.deleteProject(parseInt(req.params.id));
       res.status(204).send();
@@ -166,20 +169,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // AI Tools routes
-  app.get("/api/ai-tools", async (req, res) => {
+  app.get("/api/ai-tools", isAuthenticated, async (req: any, res) => {
     try {
-      const aiTools = await storage.getAiTools(MOCK_USER_ID);
+      const userId = req.user.claims.sub;
+      const aiTools = await storage.getAiTools(userId);
       res.json(aiTools);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch AI tools" });
     }
   });
 
-  app.post("/api/ai-tools", async (req, res) => {
+  app.post("/api/ai-tools", isAuthenticated, async (req: any, res) => {
     try {
+      const userId = req.user.claims.sub;
       const validatedData = insertAiToolSchema.parse({
         ...req.body,
-        userId: MOCK_USER_ID
+        userId: userId
       });
       const aiTool = await storage.createAiTool(validatedData);
       res.status(201).json(aiTool);
@@ -193,20 +198,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Prompts routes
-  app.get("/api/prompts", async (req, res) => {
+  app.get("/api/prompts", isAuthenticated, async (req: any, res) => {
     try {
-      const prompts = await storage.getPrompts(MOCK_USER_ID);
+      const userId = req.user.claims.sub;
+      const prompts = await storage.getPrompts(userId);
       res.json(prompts);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch prompts" });
     }
   });
 
-  app.post("/api/prompts", async (req, res) => {
+  app.post("/api/prompts", isAuthenticated, async (req: any, res) => {
     try {
+      const userId = req.user.claims.sub;
       const validatedData = insertPromptSchema.parse({
         ...req.body,
-        userId: MOCK_USER_ID
+        userId: userId
       });
       const prompt = await storage.createPrompt(validatedData);
       res.status(201).json(prompt);
@@ -220,20 +227,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Knowledge Base routes
-  app.get("/api/knowledge", async (req, res) => {
+  app.get("/api/knowledge", isAuthenticated, async (req: any, res) => {
     try {
-      const knowledge = await storage.getKnowledgeBase(MOCK_USER_ID);
+      const userId = req.user.claims.sub;
+      const knowledge = await storage.getKnowledgeBase(userId);
       res.json(knowledge);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch knowledge base" });
     }
   });
 
-  app.post("/api/knowledge", async (req, res) => {
+  app.post("/api/knowledge", isAuthenticated, async (req: any, res) => {
     try {
+      const userId = req.user.claims.sub;
       const validatedData = insertKnowledgeBaseSchema.parse({
         ...req.body,
-        userId: MOCK_USER_ID
+        userId: userId
       });
       const knowledge = await storage.createKnowledgeBase(validatedData);
       res.status(201).json(knowledge);
@@ -247,20 +256,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Automation Workflows routes
-  app.get("/api/automation", async (req, res) => {
+  app.get("/api/automation", isAuthenticated, async (req: any, res) => {
     try {
-      const workflows = await storage.getAutomationWorkflows(MOCK_USER_ID);
+      const userId = req.user.claims.sub;
+      const workflows = await storage.getAutomationWorkflows(userId);
       res.json(workflows);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch automation workflows" });
     }
   });
 
-  app.post("/api/automation", async (req, res) => {
+  app.post("/api/automation", isAuthenticated, async (req: any, res) => {
     try {
+      const userId = req.user.claims.sub;
       const validatedData = insertAutomationWorkflowSchema.parse({
         ...req.body,
-        userId: MOCK_USER_ID
+        userId: userId
       });
       const workflow = await storage.createAutomationWorkflow(validatedData);
       res.status(201).json(workflow);
@@ -274,20 +285,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Revenue Tracking routes
-  app.get("/api/revenue", async (req, res) => {
+  app.get("/api/revenue", isAuthenticated, async (req: any, res) => {
     try {
-      const revenue = await storage.getRevenueTracking(MOCK_USER_ID);
+      const userId = req.user.claims.sub;
+      const revenue = await storage.getRevenueTracking(userId);
       res.json(revenue);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch revenue tracking" });
     }
   });
 
-  app.post("/api/revenue", async (req, res) => {
+  app.post("/api/revenue", isAuthenticated, async (req: any, res) => {
     try {
+      const userId = req.user.claims.sub;
       const validatedData = insertRevenueTrackingSchema.parse({
         ...req.body,
-        userId: MOCK_USER_ID
+        userId: userId
       });
       const revenue = await storage.createRevenueTracking(validatedData);
       res.status(201).json(revenue);
@@ -301,20 +314,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Experiments routes for AI Experimentation Lab
-  app.get("/api/experiments", async (req, res) => {
+  app.get("/api/experiments", isAuthenticated, async (req: any, res) => {
     try {
-      const experiments = await storage.getExperiments(MOCK_USER_ID);
+      const userId = req.user.claims.sub;
+      const experiments = await storage.getExperiments(userId);
       res.json(experiments);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch experiments" });
     }
   });
 
-  app.post("/api/experiments", async (req, res) => {
+  app.post("/api/experiments", isAuthenticated, async (req: any, res) => {
     try {
+      const userId = req.user.claims.sub;
       const validatedData = insertExperimentSchema.parse({
         ...req.body,
-        userId: MOCK_USER_ID
+        userId: userId
       });
       const experiment = await storage.createExperiment(validatedData);
       res.status(201).json(experiment);
@@ -327,7 +342,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/experiments/:id/run", async (req, res) => {
+  app.post("/api/experiments/:id/run", isAuthenticated, async (req: any, res) => {
     try {
       const experiment = await storage.runExperiment(parseInt(req.params.id));
       res.json(experiment);
@@ -337,20 +352,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Growth Insights routes for Strategic Growth Advisor
-  app.get("/api/insights", async (req, res) => {
+  app.get("/api/insights", isAuthenticated, async (req: any, res) => {
     try {
-      const insights = await storage.getInsights(MOCK_USER_ID);
+      const userId = req.user.claims.sub;
+      const insights = await storage.getInsights(userId);
       res.json(insights);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch insights" });
     }
   });
 
-  app.post("/api/insights", async (req, res) => {
+  app.post("/api/insights", isAuthenticated, async (req: any, res) => {
     try {
+      const userId = req.user.claims.sub;
       const validatedData = insertInsightSchema.parse({
         ...req.body,
-        userId: MOCK_USER_ID
+        userId: userId
       });
       const insight = await storage.createInsight(validatedData);
       res.status(201).json(insight);
@@ -363,9 +380,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/growth/metrics", async (req, res) => {
+  app.get("/api/growth/metrics", isAuthenticated, async (req: any, res) => {
     try {
-      const metrics = await storage.getGrowthMetrics(MOCK_USER_ID);
+      const userId = req.user.claims.sub;
+      const metrics = await storage.getGrowthMetrics(userId);
       res.json(metrics);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch growth metrics" });
@@ -373,21 +391,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Business Intelligence routes
-  app.get("/api/analytics", async (req, res) => {
+  app.get("/api/analytics", isAuthenticated, async (req: any, res) => {
     try {
+      const userId = req.user.claims.sub;
       const period = req.query.period as string || '30d';
-      const analytics = await storage.getBusinessAnalytics(MOCK_USER_ID, period);
+      const analytics = await storage.getBusinessAnalytics(userId, period);
       res.json(analytics);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch analytics" });
     }
   });
 
-  app.post("/api/analytics/metrics", async (req, res) => {
+  app.post("/api/analytics/metrics", isAuthenticated, async (req: any, res) => {
     try {
+      const userId = req.user.claims.sub;
       const validatedData = insertBusinessMetricSchema.parse({
         ...req.body,
-        userId: MOCK_USER_ID
+        userId: userId
       });
       const metric = await storage.createBusinessMetric(validatedData);
       res.status(201).json(metric);
@@ -401,20 +421,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Collaboration routes
-  app.get("/api/collaborations", async (req, res) => {
+  app.get("/api/collaborations", isAuthenticated, async (req: any, res) => {
     try {
-      const collaborations = await storage.getCollaborations(MOCK_USER_ID);
+      const userId = req.user.claims.sub;
+      const collaborations = await storage.getCollaborations(userId);
       res.json(collaborations);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch collaborations" });
     }
   });
 
-  app.post("/api/collaborations", async (req, res) => {
+  app.post("/api/collaborations", isAuthenticated, async (req: any, res) => {
     try {
+      const userId = req.user.claims.sub;
       const validatedData = insertCollaborationSchema.parse({
         ...req.body,
-        userId: MOCK_USER_ID
+        userId: userId
       });
       const collaboration = await storage.createCollaboration(validatedData);
       res.status(201).json(collaboration);
@@ -428,28 +450,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Content Creation routes
-  app.get("/api/content", async (req, res) => {
+  app.get("/api/content", isAuthenticated, async (req: any, res) => {
     try {
-      // Mock response for content items
-      res.json([]);
+      const userId = req.user.claims.sub;
+      const content = await storage.getContentItems(userId);
+      res.json(content);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch content" });
     }
   });
 
-  app.post("/api/content", async (req, res) => {
+  app.post("/api/content", isAuthenticated, async (req: any, res) => {
     try {
-      // Mock response for creating content
-      res.status(201).json({ id: Date.now(), ...req.body });
+      const userId = req.user.claims.sub;
+      const validatedData = insertContentItemSchema.parse({
+        ...req.body,
+        userId: userId
+      });
+      const content = await storage.createContentItem(validatedData);
+      res.status(201).json(content);
     } catch (error) {
-      res.status(500).json({ error: "Failed to create content" });
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: fromZodError(error).toString() });
+      } else {
+        res.status(500).json({ error: "Failed to create content" });
+      }
     }
   });
 
-  app.post("/api/content/generate", async (req, res) => {
+  app.put("/api/content/:id", isAuthenticated, async (req: any, res) => {
     try {
-      // Mock AI content generation
-      res.json({ 
+      const validatedData = insertContentItemSchema.partial().parse(req.body);
+      const content = await storage.updateContentItem(parseInt(req.params.id), validatedData);
+      res.json(content);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: fromZodError(error).toString() });
+      } else {
+        res.status(500).json({ error: "Failed to update content" });
+      }
+    }
+  });
+
+  app.delete("/api/content/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      await storage.deleteContentItem(parseInt(req.params.id));
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete content" });
+    }
+  });
+
+  app.post("/api/content/generate", isAuthenticated, async (req: any, res) => {
+    try {
+      const { generateContentIdeas } = await import('./openai');
+      const { topic, contentType, targetAudience } = req.body;
+      const ideas = await generateContentIdeas(topic, contentType, targetAudience, 1);
+      res.json(ideas[0] || {
         content: "Generated content based on: " + req.body.prompt,
         type: req.body.type || "text"
       });
@@ -459,166 +516,430 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Email Intelligence routes
-  app.get("/api/emails", async (req, res) => {
+  app.get("/api/emails", isAuthenticated, async (req: any, res) => {
     try {
-      // Mock response for email analyses
-      res.json([]);
+      const userId = req.user.claims.sub;
+      const emails = await storage.getEmailAnalyses(userId);
+      res.json(emails);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch emails" });
     }
   });
 
-  app.post("/api/emails/:id/process", async (req, res) => {
+  app.post("/api/emails", isAuthenticated, async (req: any, res) => {
     try {
-      res.json({ success: true });
+      const userId = req.user.claims.sub;
+      const validatedData = insertEmailAnalysisSchema.parse({
+        ...req.body,
+        userId: userId
+      });
+      const email = await storage.createEmailAnalysis(validatedData);
+      res.status(201).json(email);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: fromZodError(error).toString() });
+      } else {
+        res.status(500).json({ error: "Failed to create email analysis" });
+      }
+    }
+  });
+
+  app.put("/api/emails/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const validatedData = insertEmailAnalysisSchema.partial().parse(req.body);
+      const email = await storage.updateEmailAnalysis(parseInt(req.params.id), validatedData);
+      res.json(email);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: fromZodError(error).toString() });
+      } else {
+        res.status(500).json({ error: "Failed to update email" });
+      }
+    }
+  });
+
+  app.post("/api/emails/:id/process", isAuthenticated, async (req: any, res) => {
+    try {
+      const email = await storage.getEmailAnalysis(parseInt(req.params.id));
+      if (!email) {
+        return res.status(404).json({ error: "Email not found" });
+      }
+      // Mark as processed
+      const updated = await storage.updateEmailAnalysis(parseInt(req.params.id), { status: 'read' });
+      res.json(updated);
     } catch (error) {
       res.status(500).json({ error: "Failed to process email" });
     }
   });
 
-  app.post("/api/emails/:id/respond", async (req, res) => {
+  app.post("/api/emails/:id/respond", isAuthenticated, async (req: any, res) => {
     try {
-      res.json({ success: true });
+      const updated = await storage.updateEmailAnalysis(parseInt(req.params.id), { status: 'responded' });
+      res.json(updated);
     } catch (error) {
       res.status(500).json({ error: "Failed to send response" });
     }
   });
 
-  app.get("/api/email-templates", async (req, res) => {
+  app.get("/api/email-templates", isAuthenticated, async (req: any, res) => {
     try {
-      res.json([]);
+      // Return default templates
+      res.json([
+        { id: 1, name: 'Quick Response', template: 'Thank you for reaching out. I will get back to you shortly.' },
+        { id: 2, name: 'Project Update', template: 'Here is an update on your project...' },
+        { id: 3, name: 'Invoice Follow-up', template: 'This is a friendly reminder regarding invoice #...' }
+      ]);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch email templates" });
     }
   });
 
   // Intelligent Scheduling routes
-  app.get("/api/tasks", async (req, res) => {
+  app.get("/api/tasks", isAuthenticated, async (req: any, res) => {
     try {
-      res.json([]);
+      const userId = req.user.claims.sub;
+      const tasks = await storage.getTasks(userId);
+      res.json(tasks);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch tasks" });
     }
   });
 
-  app.get("/api/energy-patterns", async (req, res) => {
+  app.post("/api/tasks", isAuthenticated, async (req: any, res) => {
     try {
-      res.json([]);
+      const userId = req.user.claims.sub;
+      const validatedData = insertTaskSchema.parse({
+        ...req.body,
+        userId: userId
+      });
+      const task = await storage.createTask(validatedData);
+      res.status(201).json(task);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: fromZodError(error).toString() });
+      } else {
+        res.status(500).json({ error: "Failed to create task" });
+      }
+    }
+  });
+
+  app.put("/api/tasks/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const validatedData = insertTaskSchema.partial().parse(req.body);
+      const task = await storage.updateTask(parseInt(req.params.id), validatedData);
+      res.json(task);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: fromZodError(error).toString() });
+      } else {
+        res.status(500).json({ error: "Failed to update task" });
+      }
+    }
+  });
+
+  app.delete("/api/tasks/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      await storage.deleteTask(parseInt(req.params.id));
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete task" });
+    }
+  });
+
+  app.get("/api/energy-patterns", isAuthenticated, async (req: any, res) => {
+    try {
+      // Return default energy patterns based on typical productivity cycles
+      res.json([
+        { hour: 9, level: 'high', label: 'Morning Peak' },
+        { hour: 10, level: 'high', label: 'Deep Work' },
+        { hour: 11, level: 'high', label: 'Deep Work' },
+        { hour: 12, level: 'medium', label: 'Pre-Lunch' },
+        { hour: 13, level: 'low', label: 'Post-Lunch Dip' },
+        { hour: 14, level: 'medium', label: 'Recovery' },
+        { hour: 15, level: 'high', label: 'Afternoon Peak' },
+        { hour: 16, level: 'medium', label: 'Winding Down' },
+        { hour: 17, level: 'low', label: 'End of Day' }
+      ]);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch energy patterns" });
     }
   });
 
-  app.get("/api/schedule/:date", async (req, res) => {
+  app.get("/api/schedule/:date", isAuthenticated, async (req: any, res) => {
     try {
-      res.json([]);
+      const userId = req.user.claims.sub;
+      const date = new Date(req.params.date);
+      const tasks = await storage.getTasksByDate(userId, date);
+      res.json(tasks);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch schedule" });
     }
   });
 
-  app.post("/api/schedule/optimize", async (req, res) => {
+  app.post("/api/schedule/optimize", isAuthenticated, async (req: any, res) => {
     try {
-      res.json({ success: true });
+      const userId = req.user.claims.sub;
+      const tasks = await storage.getTasks(userId);
+      // Sort tasks by priority and energy requirements
+      const optimized = tasks.sort((a, b) => {
+        const priorityOrder = { critical: 0, high: 1, medium: 2, low: 3 };
+        return (priorityOrder[a.priority as keyof typeof priorityOrder] || 2) -
+               (priorityOrder[b.priority as keyof typeof priorityOrder] || 2);
+      });
+      res.json({ success: true, tasks: optimized });
     } catch (error) {
       res.status(500).json({ error: "Failed to optimize schedule" });
     }
   });
 
   // Digital Asset Management routes
-  app.get("/api/assets", async (req, res) => {
+  app.get("/api/assets", isAuthenticated, async (req: any, res) => {
     try {
-      res.json([]);
+      const userId = req.user.claims.sub;
+      const assets = await storage.getDigitalAssets(userId);
+      res.json(assets);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch assets" });
     }
   });
 
-  app.post("/api/assets/upload", async (req, res) => {
+  app.post("/api/assets", isAuthenticated, async (req: any, res) => {
     try {
-      res.status(201).json({ id: Date.now(), success: true });
+      const userId = req.user.claims.sub;
+      const validatedData = insertDigitalAssetSchema.parse({
+        ...req.body,
+        userId: userId
+      });
+      const asset = await storage.createDigitalAsset(validatedData);
+      res.status(201).json(asset);
     } catch (error) {
-      res.status(500).json({ error: "Failed to upload asset" });
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: fromZodError(error).toString() });
+      } else {
+        res.status(500).json({ error: "Failed to create asset" });
+      }
     }
   });
 
-  app.post("/api/assets/:id/analyze", async (req, res) => {
+  app.put("/api/assets/:id", isAuthenticated, async (req: any, res) => {
     try {
-      res.json({ success: true });
+      const validatedData = insertDigitalAssetSchema.partial().parse(req.body);
+      const asset = await storage.updateDigitalAsset(parseInt(req.params.id), validatedData);
+      res.json(asset);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: fromZodError(error).toString() });
+      } else {
+        res.status(500).json({ error: "Failed to update asset" });
+      }
+    }
+  });
+
+  app.delete("/api/assets/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      await storage.deleteDigitalAsset(parseInt(req.params.id));
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete asset" });
+    }
+  });
+
+  app.post("/api/assets/:id/analyze", isAuthenticated, async (req: any, res) => {
+    try {
+      const asset = await storage.getDigitalAsset(parseInt(req.params.id));
+      if (!asset) {
+        return res.status(404).json({ error: "Asset not found" });
+      }
+      // Update with AI analysis placeholder
+      const updated = await storage.updateDigitalAsset(parseInt(req.params.id), {
+        aiAnalysis: { analyzed: true, analyzedAt: new Date().toISOString() }
+      });
+      res.json(updated);
     } catch (error) {
       res.status(500).json({ error: "Failed to analyze asset" });
     }
   });
 
-  app.get("/api/asset-collections", async (req, res) => {
+  app.get("/api/asset-collections", isAuthenticated, async (req: any, res) => {
     try {
-      res.json([]);
+      const userId = req.user.claims.sub;
+      const assets = await storage.getDigitalAssets(userId);
+      // Group assets by type
+      const collections = assets.reduce((acc: any, asset) => {
+        if (!acc[asset.type]) {
+          acc[asset.type] = { type: asset.type, count: 0, assets: [] };
+        }
+        acc[asset.type].count++;
+        acc[asset.type].assets.push(asset);
+        return acc;
+      }, {});
+      res.json(Object.values(collections));
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch asset collections" });
     }
   });
 
   // Knowledge Graph routes
-  app.get("/api/knowledge/entities", async (req, res) => {
+  app.get("/api/knowledge/entities", isAuthenticated, async (req: any, res) => {
     try {
-      res.json([]);
+      const userId = req.user.claims.sub;
+      const entities = await storage.getKnowledgeEntities(userId);
+      res.json(entities);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch knowledge entities" });
     }
   });
 
-  app.get("/api/knowledge/connections", async (req, res) => {
+  app.post("/api/knowledge/entities", isAuthenticated, async (req: any, res) => {
     try {
-      res.json([]);
+      const userId = req.user.claims.sub;
+      const validatedData = insertKnowledgeEntitySchema.parse({
+        ...req.body,
+        userId: userId
+      });
+      const entity = await storage.createKnowledgeEntity(validatedData);
+      res.status(201).json(entity);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: fromZodError(error).toString() });
+      } else {
+        res.status(500).json({ error: "Failed to create knowledge entity" });
+      }
+    }
+  });
+
+  app.get("/api/knowledge/connections", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const connections = await storage.getKnowledgeConnections(userId);
+      res.json(connections);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch knowledge connections" });
     }
   });
 
-  app.get("/api/knowledge/insights", async (req, res) => {
+  app.post("/api/knowledge/connections", isAuthenticated, async (req: any, res) => {
     try {
-      res.json([]);
+      const userId = req.user.claims.sub;
+      const validatedData = insertKnowledgeConnectionSchema.parse({
+        ...req.body,
+        userId: userId
+      });
+      const connection = await storage.createKnowledgeConnection(validatedData);
+      res.status(201).json(connection);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: fromZodError(error).toString() });
+      } else {
+        res.status(500).json({ error: "Failed to create knowledge connection" });
+      }
+    }
+  });
+
+  app.get("/api/knowledge/insights", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const entities = await storage.getKnowledgeEntities(userId);
+      const connections = await storage.getKnowledgeConnections(userId);
+
+      // Generate insights based on graph structure
+      const insights = [];
+
+      // Find highly connected entities
+      const entityConnections = entities.map(e => ({
+        entity: e,
+        connectionCount: connections.filter(c => c.fromEntity === e.id || c.toEntity === e.id).length
+      })).sort((a, b) => b.connectionCount - a.connectionCount);
+
+      if (entityConnections.length > 0) {
+        insights.push({
+          type: 'hub',
+          title: 'Most Connected Concept',
+          description: `"${entityConnections[0]?.entity.name}" is your most connected knowledge hub with ${entityConnections[0]?.connectionCount} connections.`
+        });
+      }
+
+      res.json(insights);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch knowledge insights" });
     }
   });
 
-  app.post("/api/knowledge/analyze", async (req, res) => {
+  app.post("/api/knowledge/analyze", isAuthenticated, async (req: any, res) => {
     try {
-      res.json({ success: true });
+      const userId = req.user.claims.sub;
+      const entities = await storage.getKnowledgeEntities(userId);
+      res.json({
+        success: true,
+        entityCount: entities.length,
+        analyzed: true
+      });
     } catch (error) {
       res.status(500).json({ error: "Failed to analyze knowledge" });
     }
   });
 
   // Content Pipeline routes
-  app.get("/api/content-pipelines", async (req, res) => {
+  app.get("/api/content-pipelines", isAuthenticated, async (req: any, res) => {
     try {
-      res.json([]);
+      const userId = req.user.claims.sub;
+      const pipelines = await storage.getContentPipelines(userId);
+      res.json(pipelines);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch content pipelines" });
     }
   });
 
-  app.post("/api/content-pipelines/:id/run", async (req, res) => {
+  app.post("/api/content-pipelines", isAuthenticated, async (req: any, res) => {
     try {
-      res.json({ success: true });
+      const userId = req.user.claims.sub;
+      const validatedData = insertContentPipelineSchema.parse({
+        ...req.body,
+        userId: userId
+      });
+      const pipeline = await storage.createContentPipeline(validatedData);
+      res.status(201).json(pipeline);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: fromZodError(error).toString() });
+      } else {
+        res.status(500).json({ error: "Failed to create content pipeline" });
+      }
+    }
+  });
+
+  app.post("/api/content-pipelines/:id/run", isAuthenticated, async (req: any, res) => {
+    try {
+      const pipeline = await storage.getContentPipeline(parseInt(req.params.id));
+      if (!pipeline) {
+        return res.status(404).json({ error: "Pipeline not found" });
+      }
+      const updated = await storage.updateContentPipeline(parseInt(req.params.id), {
+        status: 'active',
+        lastRun: new Date(),
+        totalRuns: (pipeline.totalRuns || 0) + 1
+      });
+      res.json(updated);
     } catch (error) {
       res.status(500).json({ error: "Failed to run pipeline" });
     }
   });
 
-  app.post("/api/content-pipelines/:id/pause", async (req, res) => {
+  app.post("/api/content-pipelines/:id/pause", isAuthenticated, async (req: any, res) => {
     try {
-      res.json({ success: true });
+      const updated = await storage.updateContentPipeline(parseInt(req.params.id), { status: 'paused' });
+      res.json(updated);
     } catch (error) {
       res.status(500).json({ error: "Failed to pause pipeline" });
     }
   });
 
-  app.get("/api/content-campaigns", async (req, res) => {
+  app.get("/api/content-campaigns", isAuthenticated, async (req: any, res) => {
     try {
-      res.json([]);
+      const userId = req.user.claims.sub;
+      const pipelines = await storage.getContentPipelines(userId);
+      // Group pipelines as campaigns
+      res.json(pipelines.filter(p => p.status === 'active'));
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch content campaigns" });
     }

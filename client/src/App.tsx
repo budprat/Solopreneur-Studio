@@ -9,6 +9,7 @@ import { useAuth } from "@/hooks/useAuth";
 import Landing from "@/pages/landing";
 import Dashboard from "@/pages/dashboard";
 import Projects from "@/pages/projects";
+import Clients from "@/pages/clients";
 import AITools from "@/pages/ai-tools";
 import Prompts from "@/pages/prompts";
 import Knowledge from "@/pages/knowledge";
@@ -49,6 +50,7 @@ function Router() {
           <Switch>
             <Route path="/" component={Dashboard} />
             <Route path="/projects" component={Projects} />
+            <Route path="/clients" component={Clients} />
             <Route path="/ai-tools" component={AITools} />
             <Route path="/prompts" component={Prompts} />
             <Route path="/knowledge" component={Knowledge} />
